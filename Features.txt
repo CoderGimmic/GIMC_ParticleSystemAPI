@@ -1,0 +1,40 @@
+
+ _|_|_|                          _|      _|            _|                  _|_|    _|_|_|    _|_|_|  
+ _|    _|    _|_|_|  _|  _|_|  _|_|_|_|        _|_|_|  _|    _|_|        _|    _|  _|    _|    _|    
+ _|_|_|    _|    _|  _|_|        _|      _|  _|        _|  _|_|_|_|      _|_|_|_|  _|_|_|      _|    
+ _|        _|    _|  _|          _|      _|  _|        _|  _|            _|    _|  _|          _|    
+ _|          _|_|_|  _|            _|_|  _|    _|_|_|  _|    _|_|_|      _|    _|  _|        _|_|_| 
+
+
+  Graphics API independent
+-----------------------------/
+- Custom shapes
+- Positions
+
+  Efficiency
+-----------------------------/
+- Data oriented
+- Pool size
+
+  Customization
+-----------------------------/
+- Colour
+- Coordinate Scale
+- Transformation
+- Transitions
+- Gravity
+- Drag
+- Particle types
+- Different coordinate systems
+- Custom data (flags?)
+
+  Basic Concepts
+-----------------------------/
+- System types
+- Emitters
+
+  Fancy Features
+-----------------------------/
+- Collision Bounding box
+- Curves
+- Key frames
