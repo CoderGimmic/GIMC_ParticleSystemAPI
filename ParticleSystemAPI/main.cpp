@@ -31,7 +31,8 @@ int main(int argc, const char* argv[])
 
 	PS::Emitter fireplace = partSystem.CreateEmitter();
 
-	partSystem.ParticleSetColor(fire, PS::Color(0.5f, 0.5f, 0.5f));
+	partSystem.ParticleSetColor(fire, PS::Color(0.5f, 0.5f, 0.5f, 0.5f));
+	partSystem.ParticleSetLifetime(fire, 5, 10);
 
 	while (window.isOpen())
 	{
