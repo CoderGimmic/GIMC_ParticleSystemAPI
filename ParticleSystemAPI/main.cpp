@@ -26,7 +26,12 @@ int main(int argc, const char* argv[])
 	// Load a sprite to display
 	// Start the game loop
 
-	//ParticleSystem partSystem;
+	PS::ParticleSystem partSystem;
+	PS::Particle fire = partSystem.CreateParticle();
+
+	PS::Emitter fireplace = partSystem.CreateEmitter();
+
+	partSystem.ParticleSetColor(fire, PS::Color(0.5f, 0.5f, 0.5f));
 
 	while (window.isOpen())
 	{
