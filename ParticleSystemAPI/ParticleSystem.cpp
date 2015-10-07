@@ -515,7 +515,7 @@ namespace PS
 		addFreeParticleSlot(particleIndex);
 
 		ParticleData temp = particles[numParticles];
-
+		
 	}
 
 	void ParticleSystem::addFreeDefinitionSlot(unsigned slot)

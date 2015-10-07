@@ -8,6 +8,8 @@
 #include "ParticleSystem.h"
 #include "SFML/Graphics/RectangleShape.hpp"
 
+#include <iostream>
+
 float deltaTime = 0.0f;
 sf::Clock deltaClock;
 
@@ -35,6 +37,7 @@ int main(int argc, const char* argv[])
 
 	partSystem.ParticleSetColor(fire, PS::Color(255, 255,128, 125));
 	partSystem.ParticleSetLifetime(fire, 5.0f, 10.0f);
+
 
 	while (window.isOpen())
 	{

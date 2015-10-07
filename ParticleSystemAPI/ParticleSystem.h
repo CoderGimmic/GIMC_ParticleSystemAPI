@@ -89,11 +89,13 @@ namespace PS
 
 	class ParticleSystem
 	{
+	public:
 		class ParticleDef
 		{
 		public:
+			
 			ParticleDef();
-
+			
 			float minLife, maxLife;
 			
 			Vector2 scale;
@@ -105,7 +107,7 @@ namespace PS
 			float sizeInc;
 			float sizeWiggle;
 
-			//Rotation
+			// Rotation
 			bool rotationRelative;
 			bool rotationConst;
 			float rotation;
@@ -133,6 +135,8 @@ namespace PS
 			float colorH, colorS, colorL, colorA;
 			float colorDeltaH, colorDeltaS, colordeltaL, colorDeltaA;
 			Color colorStart, colorEnd;
+
+			float test;
 
 			unsigned particle;
 			void* customData;
@@ -163,7 +167,7 @@ namespace PS
 			
 			Vector2 size;
 
-		private:
+		public:
 
 			float timer;
 		};
@@ -246,19 +250,21 @@ namespace PS
 
 	private:
 
-		static const unsigned int MAX_PARTICLE_DEFS = 1000;
+		//ParticleDef test;
+
+		static const int MAX_PARTICLE_DEFS = 1000;
 		unsigned numDefenitions;
 		ParticleDef particleDefenitions[MAX_PARTICLE_DEFS];
 		unsigned numFreeDefenitionSlots;
 		unsigned freeDefenitionSlots[MAX_PARTICLE_DEFS];
 
-		static const unsigned int MAX_PARTICLES = 10000;
+		static const int MAX_PARTICLES = 1000;
 		unsigned numParticles;
 		ParticleData particles[MAX_PARTICLES];
 		unsigned numFreeParticleSlots;
 		unsigned freeParticleSlots[MAX_PARTICLES];
 
-		static const unsigned int MAX_EMITTERS = 1000;
+		static const int MAX_EMITTERS = 1000;
 		unsigned numEmitters;
 		Emitterdef emitters[MAX_EMITTERS];
 		unsigned numFreeEmitterSlots;
