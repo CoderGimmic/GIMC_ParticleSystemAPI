@@ -26,7 +26,7 @@
 *.unsuccessfulbuild
 ipch/
 [Oo]bj/
-[Bb]uild
+[Bb]uild/
 [Bb]in
 [Dd]ebug*/
 [Rr]elease*/

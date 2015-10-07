@@ -2,45 +2,90 @@
 
 #pragma once
 
-/*
-	ParticleManager
-		ParticleSystem
-			Emitter
-			Attractor
-			Deflector
-			Particle
-
-*/
+////////////////////////////////////////////////////////////
+//
+//  "Graphics API indepenent Particle System Implementation"
+//  Per "Gimmic" Johansson (http://codergimmic.wordpress.com)
+//
+////////////////////////////////////////////////////////////
 
 namespace PS
 {
 	class Particle
 	{
 		friend class ParticleSystem;
-
-		unsigned GetUniqueID();
-		
-	private:
-
 		unsigned uniqueID;
 	};
 
 	class Emitter
 	{
 		friend class ParticleSystem;
-
-		unsigned GetUniqueID();
-
-	private:
-
 		unsigned uniqueID;
 	};
 
 	enum class EmitterShape
 	{
-		RECTANGLE,
+		POINT,
 		CIRCLE,
+		RECTANGLE,
 	};
+
+	struct Vector2
+	{
+		Vector2();
+		Vector2(float x, float y);
+
+		Vector2& operator=(const Vector2& rhs);
+		Vector2& operator+=(const Vector2& rhs);
+		Vector2& operator-=(const Vector2& rhs);
+
+		Vector2& operator*=(const float value);
+		Vector2& operator/=(const float value);
+
+		Vector2 operator+(const Vector2& rhs);
+		Vector2 operator-(const Vector2& rhs);
+		Vector2 operator*(const Vector2& rhs);
+		Vector2 operator/(const Vector2& rhs);
+
+		float length();
+		void normalize();
+
+		float X, Y;
+	};
+
+	struct Color
+	{
+		Color();
+		Color(unsigned char r, unsigned char g, unsigned char b, unsigned char a = 255);
+
+		unsigned char R, G, B, A;
+
+	private:
+
+		void clampColor();
+		unsigned char clampValue(unsigned char value);
+	};
+
+	struct HSL
+	{
+		HSL();
+		HSL(int H, int S, int L);
+
+		Color TurnToRGB();
+
+		static double EPSILON;
+
+		double Hue;
+		double Saturation;
+		double Luminance;
+
+	private:
+
+		double HueToRGB(double arg1, double arg2, double H);
+
+	};
+
+	HSL TurnToHSL(const Color& C);
 
 	class ParticleSystem
 	{
@@ -85,8 +130,8 @@ namespace PS
 			Vector2 Velocity;
 
 			// Color
-			float colorH, colorS, colorV, colorA;
-			float colorDeltaH, colorDeltaS, colordeltaV, colorDeltaA;
+			float colorH, colorS, colorL, colorA;
+			float colorDeltaH, colorDeltaS, colordeltaL, colorDeltaA;
 			Color colorStart, colorEnd;
 
 			unsigned particle;
@@ -159,7 +204,7 @@ namespace PS
 			Vector2 Velocity;
 
 			// Color
-			float colorH, colorS, colorV, colorA;
+			float colorH, colorS, colorL, colorA;
 		};
 
 	public:
@@ -170,10 +215,8 @@ namespace PS
 
 		Particle CreateParticle();
 		Emitter CreateEmitter();
-		void ActivateEmitter(Emitter emitter);
-		void DeactivateEmitter(Emitter emitter);
-		bool DestroyParticle(Particle particle);
-		bool DestroyEmitter(Emitter emitter);
+		void DestroyParticle(Particle particle);
+		void DestroyEmitter(Emitter emitter);
 
 		void ParticleSetLifetime(Particle particle, float minLife, float maxLife);
 		void ParticleSetColor(Particle particle, Color color);
@@ -220,41 +263,5 @@ namespace PS
 		Emitterdef emitters[MAX_EMITTERS];
 		unsigned numFreeEmitterSlots;
 		unsigned freeEmitterSlots[MAX_EMITTERS];
-	};
-
-	struct Vector2
-	{
-		Vector2();
-		Vector2(float x, float y);
-
-		Vector2& operator=(const Vector2& rhs);
-		Vector2& operator+=(const Vector2& rhs);
-		Vector2& operator-=(const Vector2& rhs);
-
-		Vector2& operator*=(const float value);
-		Vector2& operator/=(const float value);
-
-		Vector2& operator+(const Vector2& rhs);
-		Vector2& operator-(const Vector2& rhs);
-		Vector2& operator*(const Vector2& rhs);
-		Vector2& operator/(const Vector2& rhs);
-
-		float length();
-		void normalize();
-
-		float X, Y;
-	};
-
-	struct Color
-	{
-		Color();
-		Color(unsigned r, unsigned g, unsigned b, unsigned a);
-
-		unsigned R, G, B, A;
-
-	private:
-
-		void clampColor();
-		unsigned clampValue(unsigned value);
 	};
 };

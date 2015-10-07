@@ -26,13 +26,15 @@ int main(int argc, const char* argv[])
 	// Load a sprite to display
 	// Start the game loop
 
+	system("pause");
+
 	PS::ParticleSystem partSystem;
 	PS::Particle fire = partSystem.CreateParticle();
 
 	PS::Emitter fireplace = partSystem.CreateEmitter();
 
-	partSystem.ParticleSetColor(fire, PS::Color(0.5f, 0.5f, 0.5f, 0.5f));
-	partSystem.ParticleSetLifetime(fire, 5, 10);
+	partSystem.ParticleSetColor(fire, PS::Color(255, 255,128, 125));
+	partSystem.ParticleSetLifetime(fire, 5.0f, 10.0f);
 
 	while (window.isOpen())
 	{
@@ -76,8 +78,8 @@ int main(int argc, const char* argv[])
 			sf::RectangleShape shape(sf::Vector2f(32.0f, 32.0f));
 
 			shape.setOrigin(0, 0);
-			shape.setPosition(i*16, (float)i*16);
-			shape.setSize(sf::Vector2f(8, 8));
+			shape.setPosition(i*16.0f, (float)i*16.0f);
+			shape.setSize(sf::Vector2f(8.0f, 8.0f));
 
 			window.draw(shape);
 		}
