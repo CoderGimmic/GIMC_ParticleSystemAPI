@@ -28,7 +28,7 @@ int main(int argc, const char* argv[])
 	// Load a sprite to display
 	// Start the game loop
 
-	system("pause");
+	//system("pause");
 
 	PS::ParticleSystem partSystem;
 	PS::Particle fire = partSystem.CreateParticle();
@@ -36,12 +36,18 @@ int main(int argc, const char* argv[])
 	PS::Emitter fireplace = partSystem.CreateEmitter();
 
 	partSystem.ParticleSetColor(fire, PS::Color(255, 255,128, 125));
-	partSystem.ParticleSetLifetime(fire, 5.0f, 10.0f);
+	partSystem.ParticleSetLifetime(fire, 5.0f, 1.0f);
 
+	partSystem.EmitterSetParticle(fireplace, fire);
+	partSystem.EmitterSetLocation(fireplace, PS::Vector2(256.f, 256.f));
+	partSystem.EmitterSetFrequency(fireplace, 0.25f);
+	partSystem.EmitterSetShape(fireplace, PS::EmitterShape::POINT);
 
 	while (window.isOpen())
 	{
 		updateDeltatime();
+
+		partSystem.Update(deltaTime);
 
 		// Process events
 		sf::Event event;
@@ -76,13 +82,19 @@ int main(int argc, const char* argv[])
 		window.clear();
 
 		// render particlesystem
-		for (int i = 0; i < 16/*partSystem.ParticleCount()*/; i++)
+		for (unsigned i = 0; i < partSystem.GetParticleCount(); i++)
 		{
+			PS::Vector2 location = partSystem.GetParticleLocation(i);
+			PS::Color color = partSystem.GetParticleColor(i);
+			float size = partSystem.GetParticleSize(i);
+			PS::Vector2 scale = partSystem.GetParticleScale(i);
 			sf::RectangleShape shape(sf::Vector2f(32.0f, 32.0f));
 
-			shape.setOrigin(0, 0);
-			shape.setPosition(i*16.0f, (float)i*16.0f);
-			shape.setSize(sf::Vector2f(8.0f, 8.0f));
+			//shape.setOrigin(0, 0);
+			shape.setPosition(location.X, location.Y);
+			shape.setSize(sf::Vector2f(size, size));
+			shape.setScale(sf::Vector2f(scale.X, scale.Y));
+			shape.setFillColor(sf::Color(color.R, color.G, color.B, color.A));
 
 			window.draw(shape);
 		}

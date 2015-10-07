@@ -95,6 +95,8 @@ namespace PS
 		public:
 			
 			ParticleDef();
+
+		public:
 			
 			float minLife, maxLife;
 			
@@ -132,14 +134,20 @@ namespace PS
 			Vector2 Velocity;
 
 			// Color
+			bool colorConst;
 			float colorH, colorS, colorL, colorA;
 			float colorDeltaH, colorDeltaS, colordeltaL, colorDeltaA;
 			Color colorStart, colorEnd;
 
-			float test;
-
 			unsigned particle;
 			void* customData;
+
+		private:
+
+			void updateSize();
+			void updateVelocity();
+			void updateColor();
+			void updateRotation();
 		};
 
 		class Emitterdef
@@ -167,7 +175,7 @@ namespace PS
 			
 			Vector2 size;
 
-		public:
+		private:
 
 			float timer;
 		};
@@ -184,31 +192,20 @@ namespace PS
 
 		public:
 
-			Vector2 location;
 			float lifeLeft;
-			ParticleDef data;
+			Vector2 location;
 
-			// Size
-			bool sizeConst;
 			float size;
-
-			//Rotation
-			bool rotationRelative;
-			bool rotationConst;
 			float rotation;
-
-			// Direction
-			bool directionConst;
 			float direction;
-
-			// Speed
-			bool speedConst;
 			float speed;
 
 			Vector2 Velocity;
 
 			// Color
 			float colorH, colorS, colorL, colorA;
+
+			ParticleDef data;
 		};
 
 	public:
@@ -223,18 +220,24 @@ namespace PS
 		void DestroyEmitter(Emitter emitter);
 
 		void ParticleSetLifetime(Particle particle, float minLife, float maxLife);
+		void ParticleSetSize(Particle particle, float sizeMin, float sizeMax, float sizeInc, float sizeWiggle);
+		void ParticleSetScale(Particle particle, float scaleX, float scaleY);
 		void ParticleSetColor(Particle particle, Color color);
 		void ParticleSetColor(Particle particle, Color colorStart, Color colorEnd);
 		void ParticleSetVelocity(Particle particle, Vector2 velocity);
 		void ParticleSetCustomData(Particle particle, void* data);
 
+		void EmitterSetParticle(Emitter emitter, Particle particle);
 		void EmitterSetLocation(Emitter emitter, Vector2 location);
 		void EmitterSetShape(Emitter emitter, EmitterShape shape);
 		void EmitterSetSize(Emitter emitter, Vector2 size);
+		void EmitterSetFrequency(Emitter emitter, float frequency);
 
 		unsigned GetParticleCount();
 		Vector2 GetParticleLocation(unsigned particleIndex);
 		Color GetParticleColor(unsigned particleIndex);
+		float GetParticleSize(unsigned particleIndex);
+		Vector2 GetParticleScale(unsigned particleIndex);
 
 	private:
 
@@ -252,7 +255,7 @@ namespace PS
 
 		//ParticleDef test;
 
-		static const int MAX_PARTICLE_DEFS = 1000;
+		static const int MAX_PARTICLE_DEFS = 100;
 		unsigned numDefenitions;
 		ParticleDef particleDefenitions[MAX_PARTICLE_DEFS];
 		unsigned numFreeDefenitionSlots;
