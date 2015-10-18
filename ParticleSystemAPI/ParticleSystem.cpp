@@ -7,6 +7,8 @@
 #include <random>
 #include <ctime>
 
+#include <stdlib.h>
+
 namespace PS
 {
 	/////////////////////////////////////////////////////////////////////
@@ -14,8 +16,8 @@ namespace PS
 	/////////////////////////////////////////////////////////////////////
 
 	Vector2::Vector2()
-		: X(0)
-		, Y(0)
+		: X(0.0f)
+		, Y(0.0f)
 	{
 	}
 
@@ -80,6 +82,17 @@ namespace PS
 		return Vector2(X / rhs.X, Y / rhs.Y);
 	}
 
+	Vector2 Vector2::operator*(float value)
+	{
+		return Vector2(X * value, Y * value);
+	}
+
+	bool operator!=(Vector2& first, Vector2& second)
+	{
+		return (first.X != second.X ||
+				first.Y != second.Y);
+	}
+
 	float Vector2::length()
 	{
 		return std::sqrt(X * X + Y * Y);
@@ -117,6 +130,14 @@ namespace PS
 		clampColor();
 	}
 
+	bool operator!=(Color& first, Color& second)
+	{
+		return (first.R != second.R ||
+				first.G != second.G ||
+				first.B != second.B ||
+				first.A != second.A);
+	}
+
 	// Private
 
 	void Color::clampColor()
@@ -149,6 +170,58 @@ namespace PS
 		, Saturation(0)
 		, Luminance(0)
 	{
+	}
+
+	HSL::HSL(const Color& C)
+	{
+		double R, G, B;
+		R = C.R / 255.0;
+		G = C.G / 255.0;
+		B = C.B / 255.0;
+
+		double max, min, l, s = 0.f;
+
+		max = std::max(std::max(R, G), B);
+
+		min = std::min(std::min(R, G), B);
+
+		l = ((max + min) / 2.0);
+
+		if (max - min <= HSL::EPSILON)
+		{
+			Hue = 0;
+			Saturation = 0;
+		}
+		else
+		{
+			double diff = max - min;
+
+			if (Luminance < 0.5)
+			{
+				s = diff / (max + min);
+			}
+			else
+			{
+				s = diff / (2 - max - min);
+			}
+
+			double diffR = (((max - R) * 60) + (diff / 2.0)) / diff;
+			double diffG = (((max - G) * 60) + (diff / 2.0)) / diff;
+			double diffB = (((max - B) * 60) + (diff / 2.0)) / diff;
+
+
+			if (max - R <= HSL::EPSILON) { Hue = diffB - diffG; }
+			else if (max - G <= HSL::EPSILON) { Hue = (1 * 360) / 3.0 + (diffR - diffB); }
+			else if (max - B <= HSL::EPSILON) { Hue = (2 * 360) / 3.0 + (diffG - diffR); }
+
+			if (Hue <= 0 || Hue >= 360) { fmod(Hue, 360); }
+
+			s *= 100;
+		}
+
+		l *= 100;
+		Saturation = s;
+		Luminance = l;
 	}
 
 	HSL::HSL(int H, int S, int L)
@@ -221,63 +294,6 @@ namespace PS
 
 	}
 
-	HSL TurnToHSL(const Color& C)
-	{
-		double R, G, B;
-		R = C.R / 255.0;
-		G = C.G / 255.0;
-		B = C.B / 255.0;
-		///Casos no triviales.
-		double max, min, l, s = 0.f;
-
-		///Maximos
-		max = std::max(std::max(R, G), B);
-
-		///Minimos
-		min = std::min(std::min(R, G), B);
-
-
-		HSL A;
-		l = ((max + min) / 2.0);
-
-		if (max - min <= HSL::EPSILON)
-		{
-			A.Hue = 0;
-			A.Saturation = 0;
-		}
-		else
-		{
-			double diff = max - min;
-
-			if (A.Luminance < 0.5)
-			{
-				s = diff / (max + min);
-			}
-			else
-			{
-				s = diff / (2 - max - min);
-			}
-
-			double diffR = (((max - R) * 60) + (diff / 2.0)) / diff;
-			double diffG = (((max - G) * 60) + (diff / 2.0)) / diff;
-			double diffB = (((max - B) * 60) + (diff / 2.0)) / diff;
-
-
-			if (max - R <= HSL::EPSILON) { A.Hue = diffB - diffG; }
-			else if (max - G <= HSL::EPSILON) { A.Hue = (1 * 360) / 3.0 + (diffR - diffB); }
-			else if (max - B <= HSL::EPSILON) { A.Hue = (2 * 360) / 3.0 + (diffG - diffR); }
-
-			if (A.Hue <= 0 || A.Hue >= 360) { fmod(A.Hue, 360); }
-
-			s *= 100;
-		}
-
-		l *= 100;
-		A.Saturation = s;
-		A.Luminance = l;
-		return A;
-	}
-
 	/////////////////////////////////////////////////////////////////////
 	// Random
 	/////////////////////////////////////////////////////////////////////
@@ -313,6 +329,12 @@ namespace PS
 			return dist(eng);
 		}
 
+		float random(float max)
+		{
+			std::uniform_real_distribution<float> dist(0.0f, max);
+			return dist(eng);
+		}
+
 		float betweenf(float min, float max)
 		{
 			std::uniform_real_distribution<float> dist(min, max);
@@ -324,49 +346,43 @@ namespace PS
 	// ParticleDef
 	/////////////////////////////////////////////////////////////////////
 
+	const float ParticleSystem::ParticleDef::degToRad = 0.01745329251994329576f;
+
 	ParticleSystem::ParticleDef::ParticleDef()
+	{
+		Reset();
+	}
+
+	void ParticleSystem::ParticleDef::Reset()
 	{
 		minLife = 1.f;
 		maxLife = 1.0f;
 
 		scale = Vector2(1.0f, 1.0f);
 
-		sizeConst = true;
-		size = 32.0f;
-		sizeMin = size;
-		sizeMax = size;
+		sizeMin = 1.0f;
+		sizeMax = 1.0f;
 		sizeInc = 0.0f;
 		sizeWiggle = 0.0f;
 
 		rotationRelative = false;
-		rotationConst = true;
-		rotation = 0.0f;
-		rotationMin = rotation;
-		rotationMax = rotation;
+		rotationMin = 0.0f;
+		rotationMax = 0.0f;
 		rotationInc = 0.0f;
 		rotationWiggle = 0.0f;
 
-		directionConst = true;
-		direction = 0.0f;
-		directionMin = direction;
-		directionMax = direction;
+		directionMin = 0.0f;
+		directionMax = 0.0f;
 		directionInc = 0.0f;
 		directionWiggle = 0.0f;
 
-		speedConst = true;
-		speed = 0.0f;
-		speedMin = speed;
-		speedMax = speed;
+		speedMin = 0.0f;
+		speedMax = 0.0f;
 		speedInc = 0.0f;
 		speedWiggle = 0.0f;
 
 		Velocity = Vector2(0.0f, 0.0f);
 
-		colorConst = true;
-		colorH = 360.0f;
-		colorS = 100.0f;
-		colorL = 100.0f;
-		colorA = 1.0f;
 		colorDeltaH = 0.0f;
 		colorDeltaS = 0.0f;
 		colordeltaL = 0.0f;
@@ -377,51 +393,167 @@ namespace PS
 		particle = (unsigned)-1;
 
 		customData = nullptr;
+
+		m_flagBits = 0x0000;
+	}
+
+	void ParticleSystem::ParticleDef::Process(ParticleOutput& output, float deltaTime)
+	{
+		//Size
+		if (m_flagBits & EParticleFlags::Flag_Size)
+		{
+			output.size = updateSize(output.size, deltaTime);
+		}
+
+		// Color
+		if (m_flagBits & EParticleFlags::Flag_Color)
+			updateColor(output, deltaTime);
+
+		// Location
+		if (m_flagBits & EParticleFlags::Flag_Location)
+		{
+			bool shouldUpdateSpeed = 
+				((m_flagBits & EParticleFlags::Flag_Speed) ? true : false);
+			bool shouldUpdateDirection = 
+				((m_flagBits & EParticleFlags::Flag_Direction) ? true : false);
+			float currentSpeed = 0.0f;
+			float currentDirection = 0.0f;
+			ParticleOutput::LocationData locationData;
+
+			if (shouldUpdateSpeed || shouldUpdateDirection)
+			{
+				locationData = output.m_locationData;
+				currentSpeed = locationData.speed;
+				currentDirection = locationData.direction;
+			}
+
+			// Speed
+			if (shouldUpdateSpeed) 
+			{
+				currentSpeed = updateSpeed(currentSpeed, deltaTime);
+			}
+
+			// Direction
+			if (shouldUpdateDirection)
+			{
+				currentDirection = updateDirection(currentDirection, deltaTime);
+			}
+
+			// Velocity
+			if (shouldUpdateSpeed || shouldUpdateDirection)
+			{
+				locationData.speed = currentSpeed;
+				locationData.direction = currentDirection;
+				output.m_locationData = locationData;
+
+				updateVelocity(currentSpeed, currentDirection, deltaTime);
+			}
+
+			// Location
+			output.location += Velocity * deltaTime;
+		}
+		
+		// Rotation
+		if (m_flagBits & EParticleFlags::Flag_Rotation)
+			updateRotation(output, deltaTime);
 	}
 
 	// Private
 
-	void ParticleSystem::ParticleDef::updateSize()
+	float ParticleSystem::ParticleDef::updateSize(float currentSize, float deltaTime)
 	{
-		sizeConst = 
-			sizeMin == sizeMax 
-			&& sizeWiggle == 0.0f 
-			&& sizeInc == 0.0f;
+		float Result = currentSize + sizeInc*deltaTime;
+		return(Result);
 	}
 
-	void ParticleSystem::ParticleDef::updateRotation()
+	void ParticleSystem::ParticleDef::updateColor(ParticleOutput& output,float deltaTime)
 	{
-		rotationConst =
-			!rotationRelative
-			&& rotationMin == rotationMax
-			&& rotationInc == 0.0f
-			&& rotationWiggle == 0.f;
+		ParticleOutput::ColorData data = output.m_colorData;
+		float colorH = data.H;
+		float colorS = data.S;
+		float colorL = data.L;
+		float colorA = data.A;
+
+		colorH += colorDeltaH * deltaTime;
+		colorS += colorDeltaS * deltaTime;
+		colorL += colordeltaL * deltaTime;
+		colorA += colorDeltaA * deltaTime;
+
+		if (colorH > 360.0f) colorH = 360.0f;
+		if (colorH < 0.0f)   colorH = 0.0f;
+		if (colorS > 100.0f) colorS = 100.0f;
+		if (colorS< 0.0f)    colorS = 0.0f;
+		if (colorL > 100.0f) colorL = 100.0f;
+		if (colorL < 0.0f)   colorL = 0.0f;
+		if (colorA > 360.0f) colorA = 360.0f;
+		if (colorA < 0.0f)   colorA = 0.0f;
+
+		data.H = colorH;
+		data.S = colorS;
+		data.L = colorL;
+		data.A = colorA;
+
+		Color Result = HSL((unsigned)colorH, (unsigned)colorS, (unsigned)colorL).TurnToRGB();
+		Result.A = (unsigned char)colorA;
+
+		output.color = Result;
 	}
 
-	void ParticleSystem::ParticleDef::updateVelocity()
+	float ParticleSystem::ParticleDef::updateSpeed(float currentSpeed, float deltaTime)
 	{
-
+		float Result = currentSpeed + (speedInc * deltaTime);
+		return(Result);
 	}
 
-	void ParticleSystem::ParticleDef::updateColor()
+	float ParticleSystem::ParticleDef::updateDirection(float currentDirection, float deltaTime)
 	{
+		float Result = currentDirection + (directionInc * deltaTime);
+		return(Result);
+	}
 
+	void ParticleSystem::ParticleDef::updateVelocity(float currentSpeed, float currentDirection, float deltaTime)
+	{
+		float angle = currentDirection * degToRad;
+		Vector2 dir(cos(angle), sin(angle));
+
+		float hyp = sqrtf(dir.X*dir.X + dir.Y*dir.Y);
+		if (hyp > 0.0f)
+		{
+			dir.X /= hyp;
+			dir.X /= hyp;
+		}
+
+		Velocity.X = dir.X*currentSpeed;
+		Velocity.Y = dir.Y*currentSpeed;
+	}
+
+	void ParticleSystem::ParticleDef::updateRotation(ParticleOutput& output, float deltaTime)
+	{
+		if (rotationRelative)
+			output.rotation = output.m_locationData.direction;
+		else
+		{
+			output.rotation += rotationInc * deltaTime;
+		}
 	}
 
 	/////////////////////////////////////////////////////////////////////
 	// EmitterDef
 	/////////////////////////////////////////////////////////////////////
 
+	const float ParticleSystem::Emitterdef::PI_2 = 6.28318530717958647693f;
+
 	ParticleSystem::Emitterdef::Emitterdef()
+	{
+		Reset();
+	}
+
+	void ParticleSystem::Emitterdef::Reset()
 	{
 		particle = (unsigned)-1;
 		timer = 0.0f;
 		frequency = 1.0f;
-	}
-
-	ParticleSystem::Emitterdef::Emitterdef(EmitterShape newShape)
-	{
-		shape = newShape;
+		shape = EmitterShape::POINT;
 	}
 
 	bool ParticleSystem::Emitterdef::Update(float deltaTime)
@@ -438,113 +570,36 @@ namespace PS
 
 	Vector2 ParticleSystem::Emitterdef::GetSpawnLocation()
 	{
-		Vector2 Location;
 		switch (shape)
 		{
 			case EmitterShape::POINT:
-				Location = location;
+			{
+				return location;
+			}
 			break;
 			case EmitterShape::CIRCLE:
+			{
+				Vector2 Location;
 
+				float angle = Random::betweenf(0.f, PI_2);
+				float radius = Random::betweenf(0.0f, dims.X);
+
+				Location.X = location.X + radius * cos(angle);
+				Location.Y = location.Y + radius * sin(angle);
+
+				return Location;
+			}
 			break;
 			case EmitterShape::RECTANGLE:
-				
+			{
+				return location +
+					Vector2(dims.X*-1.0f + Random::random(dims.X),
+							dims.Y*-1.0f + Random::random(dims.Y));
+			}
 			break;
 		}
 
-		return Location;
-	}
-
-	/////////////////////////////////////////////////////////////////////
-	// ParticleData
-	/////////////////////////////////////////////////////////////////////
-
-	ParticleSystem::ParticleData::ParticleData()
-	{
-		lifeLeft = 1.0f;
-		
-		size = 8.f;
-		rotation = 0.f;
-		direction = 0.f;
-		speed = 0.f;
-
-		colorH = 360.f;
-		colorS = 100.f;
-		colorL = 100.f;
-		colorA = 1.f;
-	}
-
-	void ParticleSystem::ParticleData::Init(ParticleDef def, Vector2 newLocation)
-	{
-		data = def;
-		location = newLocation;
-		lifeLeft = data.maxLife;
-
-		size = Random::betweenf(data.sizeMin, data.sizeMax);
-	}
-
-	bool ParticleSystem::ParticleData::Update(float deltaTime)
-	{
-		if (deltaTime == 0.0f)
-			return false;
-
-		lifeLeft -= deltaTime;
-		if (lifeLeft <= 0)
-		{
-			return true;
-		}
-
-		if (!data.colorConst)
-		{
-			colorH += data.colorDeltaH * deltaTime;
-			colorS += data.colorDeltaS * deltaTime;
-			colorL += data.colordeltaL * deltaTime;
-			colorA += data.colorDeltaA * deltaTime;
-
-			if (colorH > 360.0f) colorH = 360.0f;
-			if (colorH < 0.0f)   colorH = 0.0f;
-			if (colorS > 100.0f) colorS = 100.0f;
-			if (colorS< 0.0f)    colorS = 0.0f;
-			if (colorL > 100.0f) colorL = 100.0f;
-			if (colorL < 0.0f)   colorL = 0.0f;
-			if (colorA > 360.0f) colorA = 360.0f;
-			if (colorA < 0.0f)   colorA = 0.0f;
-		}
-
-		// TRANSFORMATIONS
-		if (!data.sizeConst)
-		{
-			size += Random::betweenf(data.sizeWiggle * -1.0f, data.sizeWiggle);
-			size += data.sizeInc * deltaTime;
-		}
-
-		if (!data.rotationConst && !data.rotationRelative)
-		{
-			rotation += Random::betweenf(data.rotationWiggle * -1.0f, data.rotationWiggle);
-			rotation += data.rotationInc * deltaTime;
-		}
-
-		if (!data.directionConst)
-		{
-			direction += Random::betweenf(data.directionWiggle * -1.0f, data.directionWiggle);
-			direction += data.directionInc * deltaTime;
-		}
-
-		if (!data.speedConst)
-		{
-			speed += Random::betweenf(data.speedWiggle * -1.0f, data.speedWiggle);
-			speed += data.speedInc * deltaTime;
-		}
-
-		return false;
-	}
-
-	Color ParticleSystem::ParticleData::GetColor()
-	{
-		return Color(255, 0, 0, 255);
-		Color ReturnColor = HSL((unsigned)colorH, (unsigned)colorS, (unsigned)colorL).TurnToRGB();
-		ReturnColor.A = (unsigned char)colorA;
-		return ReturnColor;
+		return Vector2();
 	}
 
 	/////////////////////////////////////////////////////////////////////
@@ -555,14 +610,33 @@ namespace PS
 	{
 		Random::setRandomSeed();
 
-		numDefenitions = 0;
-		numFreeDefenitionSlots = 0;
+		numDefinitions = 0;
+		particleDefinitions = new ParticleDef[MAX_PARTICLE_DEFS];
+		for (unsigned i = 0; i < MAX_PARTICLE_DEFS; i++)
+		{
+			particleDefinitions[i] = ParticleDef();
+		}
+		//numFreeDefinitionSlots = 0;
 
-		numParticles = 0;
-		numFreeParticleSlots = 0;
+		particleDefCacheIndex = (unsigned)-1;
 
 		numEmitters = 0;
-		numFreeEmitterSlots = 0;
+		emitters = new Emitterdef[MAX_EMITTERS];
+		//numFreeEmitterSlots = 0;
+
+		numParticles = 0;
+		particles = new ParticleOutput[MAX_PARTICLES];
+		//numFreeParticleSlots = 0;
+	}
+
+	ParticleSystem::~ParticleSystem()
+	{
+		delete[] particleDefinitions;
+		particleDefinitions = nullptr;
+		delete[] emitters;
+		emitters = nullptr;
+		delete[] particles;
+		particles = nullptr;
 	}
 
 	void ParticleSystem::Update(float deltaTime)
@@ -575,20 +649,22 @@ namespace PS
 
 		for (unsigned i = 0; i < numParticles; i++)
 		{
-			float lifeLeft = particles[i].lifeLeft;
-			lifeLeft -= deltaTime;
-			if (lifeLeft <= 0.0f)
+			particles[i].m_life -= deltaTime;
+			if (particles[i].m_life <= 0.0f)
 			{
-				numDestroyedParticles++;
 				destroyedParticles[numDestroyedParticles] = i;
+				numDestroyedParticles++;
 
-				if (particles[i].data.particle != -1)
+				/*if (particles[i].data.particle != -1)
 				{
 					createdParticles[numCreatedParticles] = particles[i].data.particle;
 					createdParticleLocations[numCreatedParticles] = particles[i].location;
 					numCreatedParticles++;
-				}
+				}*/
+				continue;
 			}
+
+			particleDefinitions[particles[i].m_def].Process(particles[i], deltaTime);
 		}
 
 		for (unsigned i = 0; i < numEmitters; i++)
@@ -615,73 +691,38 @@ namespace PS
 	Particle ParticleSystem::CreateParticle()
 	{
 		Particle handle;
-		handle.uniqueID = getFreeDefenitionSlot();
-		numDefenitions++;
+		handle.uniqueID = //getFreeDefenitionSlot();
+		numDefinitions++;
 		return handle;
 	}
 
 	Emitter ParticleSystem::CreateEmitter()
 	{
 		Emitter handle;
-		handle.uniqueID = getFreeEmitterSlot();
+		handle.uniqueID = numEmitters;// getFreeEmitterSlot();
 		numEmitters++;
 		return handle;
 	}
 
 	void ParticleSystem::DestroyParticle(Particle particle)
 	{
-		addFreeDefinitionSlot(particle.uniqueID);
-		numDefenitions--;
+		particleDefinitions[particle.uniqueID].Reset();
+
+		if (particleDefCacheIndex == particle.uniqueID)
+		{
+			particleDefCacheIndex = (unsigned)-1;
+		}
+
+		//addFreeDefinitionSlot(particle.uniqueID);
+		numDefinitions--;
 	}
 
 	void ParticleSystem::DestroyEmitter(Emitter emitter)
 	{
-		addFreeEmitterSlot(emitter.uniqueID);
+		emitters[emitter.uniqueID].Reset();
+
+		//addFreeEmitterSlot(emitter.uniqueID);
 		numEmitters--;
-	}
-
-	void ParticleSystem::ParticleSetLifetime(Particle particle, float minLife, float maxLife)
-	{
-		ParticleDef& def = particleDefenitions[particle.uniqueID];
-		def.minLife = minLife;
-		def.maxLife = maxLife;
-	}
-
-	void ParticleSystem::ParticleSetSize(Particle particle, float sizeMin, float sizeMax, float sizeInc, float sizeWiggle)
-	{
-		ParticleDef& def = particleDefenitions[particle.uniqueID];
-		def.sizeMin = sizeMin;
-		def.sizeMax = sizeMax;
-		def.sizeInc = sizeInc;
-		def.sizeWiggle = sizeWiggle;
-	}
-
-	void ParticleSystem::ParticleSetScale(Particle particle, float scaleX, float scaleY)
-	{
-		ParticleDef& def = particleDefenitions[particle.uniqueID];
-		def.scale = Vector2(scaleX, scaleY);
-	}
-
-	void ParticleSystem::ParticleSetColor(Particle particle, Color color)
-	{
-		ParticleSetColor(particle, color, color);
-	}
-
-	void ParticleSystem::ParticleSetColor(Particle particle, Color colorStart, Color colorEnd)
-	{
-		ParticleDef& def = particleDefenitions[particle.uniqueID];
-		def.colorStart = colorStart;
-		def.colorEnd = colorEnd;
-	}
-
-	void ParticleSystem::ParticleSetVelocity(Particle particle, Vector2 velocity)
-	{
-		particleDefenitions[particle.uniqueID].Velocity = velocity;
-	}
-
-	void ParticleSystem::ParticleSetCustomData(Particle particle, void* data)
-	{
-		particleDefenitions[particle.uniqueID].customData = data;
 	}
 
 	void ParticleSystem::EmitterSetParticle(Emitter emitter, Particle particle)
@@ -694,14 +735,24 @@ namespace PS
 		emitters[emitter.uniqueID].location = location;
 	}
 
-	void ParticleSystem::EmitterSetShape(Emitter emitter, EmitterShape shape)
+	void ParticleSystem::EmitterSetPoint(Emitter emitter, Vector2 location)
 	{
-		emitters[emitter.uniqueID].shape = shape;
+		emitters[emitter.uniqueID].shape = Emitterdef::EmitterShape::POINT;
+		emitters[emitter.uniqueID].location = location;
 	}
 
-	void ParticleSystem::EmitterSetSize(Emitter	emitter, Vector2 size)
+	void ParticleSystem::EmitterSetCircle(Emitter emitter, Vector2 location, float radius)
 	{
-		emitters[emitter.uniqueID].size = size;
+		emitters[emitter.uniqueID].shape = Emitterdef::EmitterShape::CIRCLE;
+		emitters[emitter.uniqueID].location = location;
+		emitters[emitter.uniqueID].dims = Vector2(radius, radius);
+	}
+
+	void ParticleSystem::EmitterSetRectangle(Emitter emitter, Vector2 location, Vector2 dimension)
+	{
+		emitters[emitter.uniqueID].shape = Emitterdef::EmitterShape::RECTANGLE;
+		emitters[emitter.uniqueID].location = location;
+		emitters[emitter.uniqueID].dims = dimension;
 	}
 
 	void ParticleSystem::EmitterSetFrequency(Emitter emitter, float frequency)
@@ -709,105 +760,197 @@ namespace PS
 		emitters[emitter.uniqueID].frequency = frequency;
 	}
 
+	void ParticleSystem::ParticleSetLifetime(Particle particle, float minLife, float maxLife)
+	{
+		ParticleDef& def = particleDefinitions[particle.uniqueID];
+		def.minLife = std::min(minLife, maxLife);
+		def.maxLife = std::max(minLife, maxLife);
+	}
+
+	void ParticleSystem::ParticleSetSize(Particle particle, float sizeMin, float sizeMax, float sizeInc, float sizeWiggle)
+	{
+		ParticleDef& def = particleDefinitions[particle.uniqueID];
+		def.sizeMin = std::min(sizeMin, sizeMax);
+		def.sizeMax = std::max(sizeMin, sizeMax);
+		def.sizeInc = sizeInc;
+		def.sizeWiggle = sizeWiggle;
+
+		if (sizeMin != sizeMax || sizeInc != 0.0f || sizeWiggle != 0.0f)
+			def.m_flagBits |= EParticleFlags::Flag_Size;
+	}
+
+	void ParticleSystem::ParticleSetRotation(Particle particle, float rotMin, float rotMax, float rotInc /*= 0.0f*/, float rotWiggle /*= 0.0f*/, bool rotRelative /*= false*/)
+	{
+		ParticleDef& def = particleDefinitions[particle.uniqueID];
+		def.rotationMin = std::min(rotMin, rotMax);
+		def.rotationMax = std::max(rotMin, rotMax);
+		def.rotationInc = rotInc;
+		def.rotationWiggle = rotWiggle;
+		def.rotationRelative = rotRelative;
+
+		if (rotMin != rotMax || rotInc != 0.0f || rotWiggle != 0.0f)
+			def.m_flagBits |= EParticleFlags::Flag_Rotation;
+	}
+
+	void ParticleSystem::ParticleSetScale(Particle particle, float scaleX, float scaleY)
+	{
+		ParticleDef& def = particleDefinitions[particle.uniqueID];
+		def.scale = Vector2(scaleX, scaleY);
+	}
+
+	void ParticleSystem::ParticleSetColor(Particle particle, Color color)
+	{
+		ParticleSetColor(particle, color, color);
+	}
+
+	void ParticleSystem::ParticleSetColor(Particle particle, Color colorStart, Color colorEnd)
+	{
+		ParticleDef& def = particleDefinitions[particle.uniqueID];
+		def.colorStart = HSL(colorStart);
+		def.colorEnd = HSL(colorEnd);
+		def.colorStartAlpha = colorStart.A;
+		def.colorEndAlpha = colorEnd.A;
+
+		if (colorStart != colorEnd || colorStart.A != colorEnd.A)
+			def.m_flagBits |= EParticleFlags::Flag_Color;
+	}
+
+	void ParticleSystem::ParticleSetVelocity(Particle particle, Vector2 velocity)
+	{
+		ParticleDef& def = particleDefinitions[particle.uniqueID];
+		def.Velocity = velocity;
+
+		if (velocity != Vector2(0.0f, 0.0f))
+			def.m_flagBits |= EParticleFlags::Flag_Location;
+	}
+
+	void ParticleSystem::ParticleSetCustomData(Particle particle, void* data)
+	{
+		particleDefinitions[particle.uniqueID].customData = data;
+	}
+
 	unsigned ParticleSystem::GetParticleCount()
 	{
 		return numParticles;
 	}
 
-	Vector2 ParticleSystem::GetParticleLocation(unsigned particleIndex)
+	ParticleSystem::ParticleOutput* ParticleSystem::GetParticle(unsigned particleIndex)
 	{
 		if (particleIndex > numParticles)
-			return Vector2();
+			return nullptr;
 
-		return particles[particleIndex].location;
-	}
-
-	Color ParticleSystem::GetParticleColor(unsigned particleIndex)
-	{
-		if (particleIndex > numParticles)
-			return Color();
-
-		return particles[particleIndex].GetColor();
-	}
-
-	float ParticleSystem::GetParticleSize(unsigned particleIndex)
-	{
-		if (particleIndex > numParticles)
-			return 0.f;
-
-		return particles[particleIndex].size;
-	}
-
-	Vector2 ParticleSystem::GetParticleScale(unsigned particleIndex)
-	{
-		if (particleIndex > numParticles)
-			return Vector2();
-
-		return particles[particleIndex].data.scale;
+		return &particles[particleIndex];
 	}
 
 	// Private
 
 	void ParticleSystem::addParticle(unsigned defIndex, Vector2 location)
 	{
-		unsigned slot = getFreeParticleSlot();
-		particles[slot].Init(particleDefenitions[defIndex], location);
+		unsigned slot = numParticles;// getFreeParticleSlot();
+		initParticle(particles[slot], defIndex);
+		particles[slot].location = location;
+		
 		numParticles++;
 	}
 
 	void ParticleSystem::removeParticle(unsigned particleIndex)
 	{
-		addFreeParticleSlot(particleIndex);
+		//addFreeParticleSlot(particleIndex);
 
-		ParticleData temp = particles[numParticles];
+		ParticleOutput temp = particles[numParticles];
+		particles[numParticles] = particles[particleIndex];
+		particles[particleIndex] = temp;
+
 		numParticles--;
 	}
 
+	void ParticleSystem::initParticle(ParticleOutput& output, unsigned defIndex)
+	{
+		ParticleDef def;
+		if (defIndex == particleDefCacheIndex)
+		{
+			def = particleDefCache;
+		}
+		else
+		{
+			def = particleDefinitions[defIndex];
+
+			particleDefCacheIndex = defIndex;
+			particleDefCache = def;
+		}
+
+		output.m_def = defIndex;
+		output.m_life = Random::betweenf(def.minLife, def.maxLife);
+		output.scale = def.scale;
+		output.rotation = Random::betweenf(def.rotationMin, def.rotationMax);
+		output.size = Random::betweenf(def.sizeMin, def.sizeMax);
+		output.m_colorData.Set(def.colorStart, def.colorStartAlpha);
+		output.color = def.colorStart.TurnToRGB();
+		output.customData = def.customData;
+	}
+
+#if 0
 	void ParticleSystem::addFreeDefinitionSlot(unsigned slot)
 	{
-		numFreeDefenitionSlots++;
-		freeDefenitionSlots[numFreeDefenitionSlots] = slot;
+		numFreeDefinitionSlots++;
+		freeDefinitionSlots[numFreeDefinitionSlots] = slot;
 	}
 
 	void ParticleSystem::addFreeParticleSlot(unsigned slot)
 	{
-		numFreeDefenitionSlots++;
+		numFreeDefinitionSlots++;
 		freeParticleSlots[numFreeParticleSlots] = slot;
 	}
 
 	void ParticleSystem::addFreeEmitterSlot(unsigned slot)
 	{
-		numFreeDefenitionSlots++;
+		numFreeDefinitionSlots++;
 		freeEmitterSlots[numFreeEmitterSlots] = slot;
 	}
 
 	unsigned ParticleSystem::getFreeDefenitionSlot()
 	{
-		if (numFreeDefenitionSlots == 0)
-			return numDefenitions;
+		if (numFreeDefinitionSlots == 0)
+		{
+			if (numDefinitions == MAX_PARTICLE_DEFS)
+				return 0;
+			else
+				return numDefinitions;
+		}
 
-		unsigned slot = freeDefenitionSlots[numFreeDefenitionSlots];
-		numFreeDefenitionSlots--;
-		return slot;
-	}
-
-	unsigned ParticleSystem::getFreeParticleSlot()
-	{
-		if (numFreeParticleSlots == 0)
-			return numParticles;
-
-		unsigned slot = freeParticleSlots[numFreeParticleSlots];
-		numFreeParticleSlots--;
+		unsigned slot = freeDefinitionSlots[numFreeDefinitionSlots];
+		numFreeDefinitionSlots--;
 		return slot;
 	}
 
 	unsigned ParticleSystem::getFreeEmitterSlot()
 	{
 		if (numFreeEmitterSlots == 0)
-			return numEmitters;
+		{
+			if (numEmitters == MAX_EMITTERS)
+				return 0;
+			else
+				return numEmitters;
+		}
 
 		unsigned slot = freeEmitterSlots[numFreeEmitterSlots];
 		numFreeEmitterSlots--;
 		return slot;
 	}
+
+	unsigned ParticleSystem::getFreeParticleSlot()
+	{
+		if (numFreeParticleSlots == 0)
+		{
+			if (numParticles == MAX_PARTICLES)
+				return 0;
+			else
+				return numParticles;
+		}
+
+		unsigned slot = freeParticleSlots[numFreeParticleSlots];
+		numFreeParticleSlots--;
+		return slot;
+	}
+#endif
 };

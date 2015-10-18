@@ -28,20 +28,42 @@ int main(int argc, const char* argv[])
 	// Load a sprite to display
 	// Start the game loop
 
-	//system("pause");
+	std::cout << std::endl << "ParticleSystem: " <<
+		sizeof(PS::ParticleSystem) / 1024;
+	std::cout << std::endl << "ParticleOutput: " <<
+		(sizeof(PS::ParticleSystem::ParticleOutput)*1000)/1024;
+
+	std::cout << std::endl;
+
+	/*system("pause");
+	return 0;*/
 
 	PS::ParticleSystem partSystem;
 	PS::Particle fire = partSystem.CreateParticle();
-
 	PS::Emitter fireplace = partSystem.CreateEmitter();
 
-	partSystem.ParticleSetColor(fire, PS::Color(255, 255,128, 125));
-	partSystem.ParticleSetLifetime(fire, 5.0f, 1.0f);
+	PS::Particle fire2 = partSystem.CreateParticle();
+	PS::Emitter fireplace2 = partSystem.CreateEmitter();
 
+	partSystem.ParticleSetSize(fire, 32, 64, 5);
+	partSystem.ParticleSetRotation(fire, 0.0f, 360.0f, 15.0f);
+	partSystem.ParticleSetVelocity(fire, PS::Vector2(64, 16));
+	partSystem.ParticleSetColor(fire, PS::Color(255, 0,0, 125)/*, PS::Color(255,0,0,0)*/);
+	partSystem.ParticleSetLifetime(fire, 1.0f, 5.0f);
+
+	partSystem.EmitterSetPoint(fireplace, PS::Vector2(256.f, 256.f));
 	partSystem.EmitterSetParticle(fireplace, fire);
-	partSystem.EmitterSetLocation(fireplace, PS::Vector2(256.f, 256.f));
 	partSystem.EmitterSetFrequency(fireplace, 0.25f);
-	partSystem.EmitterSetShape(fireplace, PS::EmitterShape::POINT);
+
+	partSystem.ParticleSetSize(fire2, 32, 64, 5);
+	partSystem.ParticleSetRotation(fire2, 0.0f, 360.0f, 15.0f);
+	partSystem.ParticleSetVelocity(fire2, PS::Vector2(64, 16));
+	partSystem.ParticleSetColor(fire2, PS::Color(0, 255, 0, 125)/*, PS::Color(255,0,0,0)*/);
+	partSystem.ParticleSetLifetime(fire2, 1.0f, 5.0f);
+
+	partSystem.EmitterSetPoint(fireplace2, PS::Vector2(512.f, 256.f));
+	partSystem.EmitterSetParticle(fireplace2, fire2);
+	partSystem.EmitterSetFrequency(fireplace2, 0.75f);
 
 	while (window.isOpen())
 	{
@@ -55,7 +77,10 @@ int main(int argc, const char* argv[])
 		{
 			// Close window: exit
 			if (event.type == sf::Event::Closed)
+			{
 				window.close();
+				break;
+			}
 			else if (event.type == sf::Event::KeyPressed)
 			{
 				switch (event.key.code)
@@ -84,15 +109,17 @@ int main(int argc, const char* argv[])
 		// render particlesystem
 		for (unsigned i = 0; i < partSystem.GetParticleCount(); i++)
 		{
-			PS::Vector2 location = partSystem.GetParticleLocation(i);
-			PS::Color color = partSystem.GetParticleColor(i);
-			float size = partSystem.GetParticleSize(i);
-			PS::Vector2 scale = partSystem.GetParticleScale(i);
+			PS::Output* particle = partSystem.GetParticle(i);
+			PS::Vector2 location = particle->location;
+			PS::Color color = particle->color;
+			float size = particle->size;
+			PS::Vector2 scale = particle->scale;
 			sf::RectangleShape shape(sf::Vector2f(32.0f, 32.0f));
 
-			//shape.setOrigin(0, 0);
 			shape.setPosition(location.X, location.Y);
+			shape.setRotation(particle->rotation);
 			shape.setSize(sf::Vector2f(size, size));
+			shape.setOrigin(size / 2.0f, size / 2.0f);
 			shape.setScale(sf::Vector2f(scale.X, scale.Y));
 			shape.setFillColor(sf::Color(color.R, color.G, color.B, color.A));
 
@@ -102,5 +129,6 @@ int main(int argc, const char* argv[])
 		// Update the window
 		window.display();
 	}
+
 	return EXIT_SUCCESS;
 }
