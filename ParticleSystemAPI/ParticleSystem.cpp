@@ -371,10 +371,10 @@ namespace PS
 		rotationInc = 0.0f;
 		rotationWiggle = 0.0f;
 
-		directionMin = 0.0f;
-		directionMax = 0.0f;
-		directionInc = 0.0f;
-		directionWiggle = 0.0f;
+		dirMin = 0.0f;
+		dirMax = 0.0f;
+		dirInc = 0.0f;
+		dirWiggle = 0.0f;
 
 		speedMin = 0.0f;
 		speedMax = 0.0f;
@@ -385,7 +385,7 @@ namespace PS
 
 		colorDeltaH = 0.0f;
 		colorDeltaS = 0.0f;
-		colordeltaL = 0.0f;
+		colorDeltaL = 0.0f;
 		colorDeltaA = 0.0f;
 		colorStart = Color();
 		colorEnd = Color();
@@ -446,7 +446,7 @@ namespace PS
 				locationData.direction = currentDirection;
 				output.m_locationData = locationData;
 
-				updateVelocity(currentSpeed, currentDirection, deltaTime);
+				updateVelocity(currentSpeed, currentDirection);
 			}
 
 			// Location
@@ -474,10 +474,10 @@ namespace PS
 		float colorL = data.L;
 		float colorA = data.A;
 
-		colorH += colorDeltaH * deltaTime;
-		colorS += colorDeltaS * deltaTime;
-		colorL += colordeltaL * deltaTime;
-		colorA += colorDeltaA * deltaTime;
+		colorH += colorDeltaH * deltaTime * data.deltaFactor;
+		colorS += colorDeltaS * deltaTime * data.deltaFactor;
+		colorL += colorDeltaL * deltaTime * data.deltaFactor;
+		colorA += colorDeltaA * deltaTime * data.deltaFactor;
 
 		if (colorH > 360.0f) colorH = 360.0f;
 		if (colorH < 0.0f)   colorH = 0.0f;
@@ -485,7 +485,7 @@ namespace PS
 		if (colorS< 0.0f)    colorS = 0.0f;
 		if (colorL > 100.0f) colorL = 100.0f;
 		if (colorL < 0.0f)   colorL = 0.0f;
-		if (colorA > 360.0f) colorA = 360.0f;
+		if (colorA > 255.0f) colorA = 255.0f;
 		if (colorA < 0.0f)   colorA = 0.0f;
 
 		data.H = colorH;
@@ -493,10 +493,11 @@ namespace PS
 		data.L = colorL;
 		data.A = colorA;
 
-		Color Result = HSL((unsigned)colorH, (unsigned)colorS, (unsigned)colorL).TurnToRGB();
+		Color Result = HSL((int)colorH, (int)colorS, (int)colorL).TurnToRGB();
 		Result.A = (unsigned char)colorA;
 
 		output.color = Result;
+		output.m_colorData = data;
 	}
 
 	float ParticleSystem::ParticleDef::updateSpeed(float currentSpeed, float deltaTime)
@@ -507,11 +508,11 @@ namespace PS
 
 	float ParticleSystem::ParticleDef::updateDirection(float currentDirection, float deltaTime)
 	{
-		float Result = currentDirection + (directionInc * deltaTime);
+		float Result = currentDirection + (dirInc * deltaTime);
 		return(Result);
 	}
 
-	void ParticleSystem::ParticleDef::updateVelocity(float currentSpeed, float currentDirection, float deltaTime)
+	void ParticleSystem::ParticleDef::updateVelocity(float currentSpeed, float currentDirection)
 	{
 		float angle = currentDirection * degToRad;
 		Vector2 dir(cos(angle), sin(angle));
@@ -558,6 +559,9 @@ namespace PS
 
 	bool ParticleSystem::Emitterdef::Update(float deltaTime)
 	{
+		if (particle == -1)
+			return false;
+
 		timer += deltaTime;
 		if (timer >= frequency)
 		{
@@ -725,6 +729,16 @@ namespace PS
 		numEmitters--;
 	}
 
+	void ParticleSystem::SpawnParticle(Particle particle, Vector2 location)
+	{
+		addParticle(particle.uniqueID, location);
+	}
+
+	void ParticleSystem::ClearVisibleParticles()
+	{
+		numParticles = 0;
+	}
+
 	void ParticleSystem::EmitterSetParticle(Emitter emitter, Particle particle)
 	{
 		emitters[emitter.uniqueID].particle = particle.uniqueID;
@@ -762,6 +776,9 @@ namespace PS
 
 	void ParticleSystem::ParticleSetLifetime(Particle particle, float minLife, float maxLife)
 	{
+		if (minLife == 0.0f && maxLife == 0.0f)
+			return;
+
 		ParticleDef& def = particleDefinitions[particle.uniqueID];
 		def.minLife = std::min(minLife, maxLife);
 		def.maxLife = std::max(minLife, maxLife);
@@ -811,8 +828,59 @@ namespace PS
 		def.colorStartAlpha = colorStart.A;
 		def.colorEndAlpha = colorEnd.A;
 
+		if (def.colorStart.Hue != def.colorEnd.Hue)
+			def.colorDeltaH = float(def.colorStart.Hue - def.colorEnd.Hue) * -1.0f;
+		if (def.colorStart.Saturation != def.colorEnd.Saturation)
+			def.colorDeltaS = float(def.colorStart.Saturation - def.colorEnd.Saturation) * -1.0f;
+		if (def.colorStart.Luminance != def.colorEnd.Luminance)
+			def.colorDeltaL = float(def.colorStart.Luminance - def.colorEnd.Luminance) * -1.0f;
+		if (def.colorStartAlpha != def.colorEndAlpha)
+			def.colorDeltaA = float(def.colorStartAlpha - def.colorEndAlpha) * -1.0f;
+
 		if (colorStart != colorEnd || colorStart.A != colorEnd.A)
 			def.m_flagBits |= EParticleFlags::Flag_Color;
+	}
+
+	void ParticleSystem::ParticleSetDirection(Particle particle, float dirMin, float dirMax, float dirInc, float dirWiggle)
+	{
+		ParticleDef& def = particleDefinitions[particle.uniqueID];
+		def.dirMin = std::min(dirMin, dirMax);
+		def.dirMax = std::max(dirMin, dirMax);
+		def.dirInc = dirInc;
+		def.dirWiggle = dirWiggle;
+
+		if (def.dirMax != 0.0f &&
+		   (dirMin != dirMax || dirInc != 0.0f || dirWiggle != 0.0f))
+		{
+			def.m_flagBits |= EParticleFlags::Flag_Direction;
+			def.m_flagBits |= EParticleFlags::Flag_Location;
+		}
+		else if (def.dirMax != 0.0f && def.dirMin == def.dirMin)
+		{
+			def.updateVelocity(def.speedMax, def.dirMax);
+			def.m_flagBits |= EParticleFlags::Flag_Location;
+		}
+	}
+
+	void ParticleSystem::ParticleSetSpeed(Particle particle, float speedMin, float speedMax, float speedInc, float speedWiggle)
+	{
+		ParticleDef& def = particleDefinitions[particle.uniqueID];
+		def.speedMin = std::min(speedMin, speedMax);
+		def.speedMax = std::max(speedMin, speedMax);
+		def.speedInc = speedInc;
+		def.speedWiggle = speedWiggle;
+
+		if (def.speedMax != 0.0f &&
+		   (speedMin != speedMax || speedInc != 0.0f || speedWiggle != 0.0f))
+		{
+			def.m_flagBits |= EParticleFlags::Flag_Speed;
+			def.m_flagBits |= EParticleFlags::Flag_Location;
+		}
+		else if (def.speedMax != 0.0f && def.speedMin == def.speedMin)
+		{
+			def.updateVelocity(def.speedMax, def.dirMax);
+			def.m_flagBits |= EParticleFlags::Flag_Location;
+		}
 	}
 
 	void ParticleSystem::ParticleSetVelocity(Particle particle, Vector2 velocity)
@@ -885,7 +953,12 @@ namespace PS
 		output.rotation = Random::betweenf(def.rotationMin, def.rotationMax);
 		output.size = Random::betweenf(def.sizeMin, def.sizeMax);
 		output.m_colorData.Set(def.colorStart, def.colorStartAlpha);
+		output.m_colorData.deltaFactor = 1.0f / output.m_life;
+		
 		output.color = def.colorStart.TurnToRGB();
+		output.m_locationData.direction = Random::betweenf(def.dirMin, def.dirMax);
+		output.m_locationData.speed = Random::betweenf(def.speedMin, def.speedMax);
+
 		output.customData = def.customData;
 	}
 

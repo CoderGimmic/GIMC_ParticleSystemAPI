@@ -109,6 +109,7 @@ namespace PS
 			struct ColorData
 			{
 				float H, S, L, A;
+				float deltaFactor;
 
 				void Set(HSL hsl, float a)
 				{
@@ -193,7 +194,7 @@ namespace PS
 			float sizeWiggle;
 
 			// Color
-			float colorDeltaH, colorDeltaS, colordeltaL, colorDeltaA;
+			float colorDeltaH, colorDeltaS, colorDeltaL, colorDeltaA;
 			float colorStartAlpha, colorEndAlpha;
 			HSL colorStart, colorEnd;
 
@@ -209,9 +210,9 @@ namespace PS
 			float speedWiggle;
 
 			// Direction
-			float directionMin, directionMax;
-			float directionInc;
-			float directionWiggle;
+			float dirMin, dirMax;
+			float dirInc;
+			float dirWiggle;
 
 			Vector2 Velocity;
 
@@ -224,7 +225,7 @@ namespace PS
 			void updateColor(ParticleOutput& output, float deltaTime);
 			float updateSpeed(float currentSpeed, float deltaTime);
 			float updateDirection(float currentDirection, float deltaTime);
-			void updateVelocity(float currentSpeed, float currentDirection, float deltaTime);
+			void updateVelocity(float currentSpeed, float currentDirection);
 			void updateRotation(ParticleOutput& output, float deltaTime);
 
 		private:
@@ -286,6 +287,10 @@ namespace PS
 		void DestroyParticle(Particle particle);
 		void DestroyEmitter(Emitter emitter);
 
+		void SpawnParticle(Particle particle, Vector2 location);
+
+		void ClearVisibleParticles();
+
 		void EmitterSetParticle(Emitter emitter, Particle particle);
 		void EmitterSetLocation(Emitter emitter, Vector2 location);
 		void EmitterSetPoint(Emitter emitter, Vector2 location);
@@ -299,6 +304,8 @@ namespace PS
 		void ParticleSetScale(Particle particle, float scaleX, float scaleY);
 		void ParticleSetColor(Particle particle, Color color);
 		void ParticleSetColor(Particle particle, Color colorStart, Color colorEnd);
+		void ParticleSetDirection(Particle particle, float dirMin, float dirMax, float dirInc = 0.0f, float dirWiggle = 0.0f);
+		void ParticleSetSpeed(Particle particle, float speedMin, float speedMax, float speedInc = 0.0f, float speedWiggle = 0.0f);
 		void ParticleSetVelocity(Particle particle, Vector2 velocity);
 		void ParticleSetCustomData(Particle particle, void* data);
 
