@@ -73,6 +73,8 @@ namespace PS
 
 		Color TurnToRGB();
 
+		friend bool operator!=(HSL& first, HSL& second);
+
 		static double EPSILON;
 
 		double Hue;
@@ -97,12 +99,16 @@ namespace PS
 
 			struct LocationData
 			{
-				float direction;
-				float speed;
+				Vector2 Velocity;
+				/*float direction;
+				float speed;*/
+
+				float& speed() { return Velocity.X; }
+				float& direction() { return Velocity.Y; }
 
 				LocationData()
-					: direction(0.0f)
-					, speed(0.0f)
+					/*: direction(0.0f)
+					, speed(0.0f)*/
 				{}
 			};
 
@@ -132,6 +138,7 @@ namespace PS
 				: scale(1.0f, 1.0f)
 				, rotation(0.0f)
 				, size(1.0f)
+				, m_def(-1)
 			{
 				m_locationData = LocationData();
 				m_colorData = ColorData();
@@ -154,22 +161,22 @@ namespace PS
 
 		enum EParticleFlags
 		{
-			Flag_Location	= 0x0001,
-			Flag_Scale		= 0x0002,
-			Flag_Rotation	= 0x0004,
-			Flag_Size		= 0x0008,
-			Flag_Color		= 0x0010,
-			Flag_Direction	= 000020,
-			Flag_Speed		= 0x0040,
-			Flag_Flag8		= 0x0080,
-			Flag_Flag9		= 0x0100,
-			Flag_Flag10		= 0x0200,
-			Flag_Flag11		= 0x0400,
-			Flag_Flag12		= 0x0800,
-			Flag_Flag13		= 0x1000,
-			Flag_Flag14		= 0x2000,
-			Flag_Flag15		= 0x4000,
-			Flag_Flag16		= 0x8000
+			Flag_Location	= 0x0001, // 1
+			Flag_Speed		= 0x0002, // 2
+			Flag_Direction	= 0x0004, // 3
+			Flag_ConstVel	= 0x0008, // 4
+			Flag_Size		= 0x0010, // 5
+			Flag_Rotation	= 000020, // 6
+			Flag_Color		= 0x0040, // 7
+			Flag_HSL		= 0x0080, // 8
+			Flag_Flag9		= 0x0100, // 9
+			Flag_Flag10		= 0x0200, // 10
+			Flag_Flag11		= 0x0400, // 11
+			Flag_Flag12		= 0x0800, // 12
+			Flag_Flag13		= 0x1000, // 13
+			Flag_Flag14		= 0x2000, // 14
+			Flag_Flag15		= 0x4000, // 15
+			Flag_Flag16		= 0x8000  // 16
 		};
 
 		class ParticleDef
@@ -249,11 +256,7 @@ namespace PS
 			Emitterdef();
 
 			void Reset();
-
 			bool Update(float deltaTime);
-			void SetFrequency(float frequency);
-			void SetLocation(Vector2 newLocation);
-			
 			Vector2 GetSpawnLocation();
 
 		public:
@@ -264,6 +267,7 @@ namespace PS
 			unsigned particle;
 
 			float frequency;
+			unsigned particleCount;
 
 			Vector2 point;
 			Vector2 dims;
@@ -291,7 +295,7 @@ namespace PS
 
 		void ClearVisibleParticles();
 
-		void EmitterSetParticle(Emitter emitter, Particle particle);
+		void EmitterSetParticle(Emitter emitter, Particle particle, unsigned spawnCount = 1);
 		void EmitterSetLocation(Emitter emitter, Vector2 location);
 		void EmitterSetPoint(Emitter emitter, Vector2 location);
 		void EmitterSetCircle(Emitter emitter, Vector2 location, float radius);
@@ -307,6 +311,7 @@ namespace PS
 		void ParticleSetDirection(Particle particle, float dirMin, float dirMax, float dirInc = 0.0f, float dirWiggle = 0.0f);
 		void ParticleSetSpeed(Particle particle, float speedMin, float speedMax, float speedInc = 0.0f, float speedWiggle = 0.0f);
 		void ParticleSetVelocity(Particle particle, Vector2 velocity);
+		void ParticleSetSpawnedParticle(Particle particle, Particle spawnedParticle);
 		void ParticleSetCustomData(Particle particle, void* data);
 
 		unsigned GetParticleCount();

@@ -51,17 +51,19 @@ int main(int argc, const char* argv[])
 	PS::Particle fire2 = partSystem.CreateParticle();
 	PS::Emitter fireplace2 = partSystem.CreateEmitter();
 
-	partSystem.ParticleSetSize(fire, 8, 16, 5);
+	partSystem.ParticleSetSize(fire, 4, 8, 5);
 	partSystem.ParticleSetScale(fire, 1.0f, 0.5f);
-	partSystem.ParticleSetRotation(fire, 0.0f, 360.0f, 15.0f,0,false);
+	partSystem.ParticleSetRotation(fire, 0.0f, 360.0f, 15.0f,0,true);
 	partSystem.ParticleSetSpeed(fire, 96, 128);
-	partSystem.ParticleSetDirection(fire, 270 - 32, 270 + 32, 0);
-	partSystem.ParticleSetVelocity(fire, PS::Vector2(64, 16));
+	partSystem.ParticleSetDirection(fire, 270 - 32, 270 + 32);
+	//partSystem.ParticleSetVelocity(fire, PS::Vector2(64, 16));
 	partSystem.ParticleSetColor(fire, PS::Color(255, 255,0, 255), PS::Color(255,0,0,0));
-	partSystem.ParticleSetLifetime(fire, 1.0f, 2.0f);
+	partSystem.ParticleSetLifetime(fire, 5.0f, 5.0f);
+	//partSystem.ParticleSetSpawnedParticle(fire, fire);
 
+	partSystem.EmitterSetParticle(fireplace, fire, 20);
 	partSystem.EmitterSetPoint(fireplace, PS::Vector2(256.f, 256.f));
-	partSystem.EmitterSetParticle(fireplace, fire);
+	partSystem.EmitterSetRectangle(fireplace, PS::Vector2(256, 256), PS::Vector2(1080, 8));
 	partSystem.EmitterSetFrequency(fireplace, 0.01f);
 	
 	partSystem.ParticleSetSize(fire2, 32, 64, 5);

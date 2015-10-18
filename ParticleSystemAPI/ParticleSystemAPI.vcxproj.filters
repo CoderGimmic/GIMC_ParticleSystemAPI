@@ -24,15 +24,9 @@
     <ClCompile Include="ParticleSystem.cpp">
       <Filter>Source Files\ParticleSystem</Filter>
     </ClCompile>
-    <ClCompile Include="HSL.cpp">
-      <Filter>Source Files\ParticleSystem</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ParticleSystem.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="HSL.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
