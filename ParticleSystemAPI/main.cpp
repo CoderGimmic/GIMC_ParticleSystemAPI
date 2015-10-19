@@ -51,22 +51,23 @@ int main(int argc, const char* argv[])
 	PS::Particle fire2 = partSystem.CreateParticle();
 	PS::Emitter fireplace2 = partSystem.CreateEmitter();
 
-	partSystem.ParticleSetSize(fire, 4, 8, 5);
-	partSystem.ParticleSetScale(fire, 1.0f, 0.5f);
-	partSystem.ParticleSetRotation(fire, 0.0f, 360.0f, 15.0f,0,true);
-	partSystem.ParticleSetSpeed(fire, 96, 128);
-	partSystem.ParticleSetDirection(fire, 270 - 32, 270 + 32);
+	partSystem.ParticleSetSize(fire, 8, 32, 5);
+	partSystem.ParticleSetScale(fire, 1.0f, 0.1f);
+	partSystem.ParticleSetRotation(fire, 0.0f, 360.0f, 0.0f, 0, false);
+	partSystem.ParticleSetSpeed(fire, 96, 128, 0);
+	partSystem.ParticleSetDirection(fire, 270 - 32, 270 + 32, 45);
+	partSystem.ParticleSetDirection(fire, 0, 360, 45);
 	//partSystem.ParticleSetVelocity(fire, PS::Vector2(64, 16));
 	partSystem.ParticleSetColor(fire, PS::Color(255, 255,0, 255), PS::Color(255,0,0,0));
-	partSystem.ParticleSetLifetime(fire, 5.0f, 5.0f);
+	partSystem.ParticleSetLifetime(fire, 3.0f, 3.0f);
 	//partSystem.ParticleSetSpawnedParticle(fire, fire);
 
-	partSystem.EmitterSetParticle(fireplace, fire, 20);
+	partSystem.EmitterSetParticle(fireplace, fire, 1);
 	partSystem.EmitterSetPoint(fireplace, PS::Vector2(256.f, 256.f));
-	partSystem.EmitterSetRectangle(fireplace, PS::Vector2(256, 256), PS::Vector2(1080, 8));
-	partSystem.EmitterSetFrequency(fireplace, 0.01f);
+	//partSystem.EmitterSetRectangle(fireplace, PS::Vector2(256, 256), PS::Vector2(256, 8));
+	partSystem.EmitterSetFrequency(fireplace, 0.001f);
 	
-	partSystem.ParticleSetSize(fire2, 32, 64, 5);
+	/*partSystem.ParticleSetSize(fire2, 32, 64, 5);
 	partSystem.ParticleSetRotation(fire2, 0.0f, 360.0f, 15.0f);
 	partSystem.ParticleSetVelocity(fire2, PS::Vector2(64, 16));
 	partSystem.ParticleSetColor(fire2, PS::Color(0, 255, 0, 125));
@@ -74,7 +75,7 @@ int main(int argc, const char* argv[])
 
 	partSystem.EmitterSetPoint(fireplace2, PS::Vector2(512.f, 256.f));
 	partSystem.EmitterSetParticle(fireplace2, fire2);
-	partSystem.EmitterSetFrequency(fireplace2, 0.75f);
+	partSystem.EmitterSetFrequency(fireplace2, 0.75f);*/
 
 	while (window.isOpen())
 	{
@@ -120,14 +121,15 @@ int main(int argc, const char* argv[])
 
 		window.setMouseCursorVisible(false);
 
-		sf::Text partCountLabel;
-		partCountLabel.setFont(fnt);
-		partCountLabel.setColor(sf::Color::White);
-		partCountLabel.setString("Particles: " + std::to_string(partSystem.GetParticleCount()));
-		partCountLabel.setPosition(sf::Vector2f(32, 32));
-
 		// Clear screen
 		window.clear();
+
+#define TEXT_PARTICLE 0
+
+#if TEXT_PARTICLE
+		sf::Text textParticle;
+		textParticle.setFont(fnt);
+#endif
 
 		// render particlesystem
 		for (unsigned i = 0; i < partSystem.GetParticleCount(); i++)
@@ -137,17 +139,37 @@ int main(int argc, const char* argv[])
 			PS::Color color = particle->color;
 			float size = particle->size;
 			PS::Vector2 scale = particle->scale;
-			sf::RectangleShape shape(sf::Vector2f(32.0f, 32.0f));
+			scale *= 2;
+			scale.Y = scale.X;
+			sf::RectangleShape shape;
+
+#if TEXT_PARTICLE
+
+			textParticle.setString("+");
+			textParticle.setPosition(location.X, location.Y);
+			textParticle.setRotation(particle->rotation);
+			textParticle.setScale(scale.X, scale.Y);
+			textParticle.setColor(sf::Color(color.R, color.G, color.B, color.A));
+
+			window.draw(textParticle);
+#else
 
 			shape.setPosition(location.X, location.Y);
 			shape.setRotation(particle->rotation);
+			shape.setScale(sf::Vector2f(scale.X, scale.Y));
 			shape.setSize(sf::Vector2f(size, size));
 			shape.setOrigin(size / 2.0f, size / 2.0f);
-			shape.setScale(sf::Vector2f(scale.X, scale.Y));
 			shape.setFillColor(sf::Color(color.R, color.G, color.B, color.A));
 
 			window.draw(shape);
+#endif
 		}
+
+		sf::Text partCountLabel;
+		partCountLabel.setFont(fnt);
+		partCountLabel.setColor(sf::Color::White);
+		partCountLabel.setString("Particles: " + std::to_string(partSystem.GetParticleCount()));
+		partCountLabel.setPosition(sf::Vector2f(32, 32));
 
 		window.draw(partCountLabel);
 

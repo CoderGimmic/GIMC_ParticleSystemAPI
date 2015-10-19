@@ -12,6 +12,8 @@
 #include <string>
 #include <bitset>
 
+#include <assert.h>
+
 namespace util {
 	template<typename TInteger>
 	std::string InspectBinary(TInteger value) {
@@ -659,10 +661,18 @@ namespace PS
 
 		numEmitters = 0;
 		emitters = new Emitterdef[MAX_EMITTERS];
+		for (unsigned i = 0; i < MAX_EMITTERS; i++)
+		{
+			emitters[i] = Emitterdef();
+		}
 		//numFreeEmitterSlots = 0;
 
 		numParticles = 0;
 		particles = new ParticleOutput[MAX_PARTICLES];
+		for (unsigned i = 0; i < MAX_PARTICLES; i++)
+		{
+			particles[i] = ParticleOutput();
+		}
 		//numFreeParticleSlots = 0;
 	}
 
@@ -689,6 +699,7 @@ namespace PS
 			if (particles[i].m_def > numDefinitions)
 			{
 				printf("INVALID particleDef: %u \n", particles[i].m_def);
+				continue;
 			}
 			particles[i].m_life -= deltaTime;
 			if (particles[i].m_life <= 0.0f)
@@ -729,14 +740,18 @@ namespace PS
 			}
 		}
 
+		unsigned particlesDestroyed = 0;
+
 		for (unsigned i = 0; i < numDestroyedParticles; i++)
 		{
-			removeParticle(destroyedParticles[i]);
+			removeParticle(destroyedParticles[i] - particlesDestroyed);
+			particlesDestroyed++;
 		}
 
 		for (unsigned i = 0; i < numCreatedParticles; i++)
 		{
-			addParticle(createdParticles[i], createdParticleLocations[i]);
+			if (!addParticle(createdParticles[i], createdParticleLocations[i]))
+				break;
 		}
 	}
 
@@ -878,8 +893,6 @@ namespace PS
 		def.colorStartAlpha = colorStart.A;
 		def.colorEndAlpha = colorEnd.A;
 
-		bool hasHSL = false;
-
 		if (def.colorStart != def.colorEnd)
 		{
 			if (def.colorStart.Hue != def.colorEnd.Hue)
@@ -972,25 +985,32 @@ namespace PS
 	ParticleSystem::ParticleOutput* ParticleSystem::GetParticle(unsigned particleIndex)
 	{
 		if (particleIndex > numParticles)
-			return nullptr;
+			return &particles[numParticles];
 
 		return &particles[particleIndex];
 	}
 
 	// Private
 
-	void ParticleSystem::addParticle(unsigned defIndex, Vector2 location)
+	bool ParticleSystem::addParticle(unsigned defIndex, Vector2 location)
 	{
+		if (numParticles >= MAX_PARTICLES)
+			return false;
+
 		unsigned slot = numParticles;// getFreeParticleSlot();
 		initParticle(particles[slot], defIndex);
 		particles[slot].location = location;
 		
 		numParticles++;
+
+		return true;
 	}
 
 	void ParticleSystem::removeParticle(unsigned particleIndex)
 	{
 		//addFreeParticleSlot(particleIndex);
+
+		//printf("%u \n", particleIndex);
 
 		ParticleOutput temp = particles[numParticles];
 		particles[numParticles] = particles[particleIndex];

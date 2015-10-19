@@ -319,7 +319,7 @@ namespace PS
 
 	private:
 
-		void addParticle(unsigned defIndex, Vector2 location);
+		bool addParticle(unsigned defIndex, Vector2 location);
 		void removeParticle(unsigned particleIndex);
 
 		void initParticle(ParticleOutput& info, unsigned defIndex);
@@ -351,7 +351,7 @@ namespace PS
 		/*unsigned numFreeEmitterSlots;
 		unsigned freeEmitterSlots[MAX_EMITTERS];*/
 
-		static const int MAX_PARTICLES = 1000;
+		static const int MAX_PARTICLES = 500;
 		unsigned numParticles;
 		ParticleOutput* particles;
 		/*unsigned numFreeParticleSlots;
