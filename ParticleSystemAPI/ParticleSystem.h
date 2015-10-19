@@ -21,6 +21,7 @@ namespace PS
 	{
 		friend class ParticleSystem;
 		unsigned uniqueID;
+		unsigned particleID;
 	};
 
 	struct Vector2
@@ -86,7 +87,6 @@ namespace PS
 		double HueToRGB(double arg1, double arg2, double H);
 
 	};
-
 
 	class ParticleSystem
 	{
@@ -240,6 +240,8 @@ namespace PS
 			static const float degToRad;
 
 			unsigned short m_flagBits;
+
+			ParticleOutput* particles;
 		};
 
 		class Emitterdef
@@ -351,7 +353,7 @@ namespace PS
 		/*unsigned numFreeEmitterSlots;
 		unsigned freeEmitterSlots[MAX_EMITTERS];*/
 
-		static const int MAX_PARTICLES = 500;
+		static const int MAX_PARTICLES = 1000;
 		unsigned numParticles;
 		ParticleOutput* particles;
 		/*unsigned numFreeParticleSlots;
@@ -359,4 +361,23 @@ namespace PS
 	};
 
 	typedef ParticleSystem::ParticleOutput Output;
+
+	class ParticleIterator
+	{
+	public:
+
+		ParticleIterator(class ParticleSystem* particleSystem);
+		ParticleIterator() = delete;
+
+		void operator++();
+		const Output& operator*() const;
+		const Output& operator->() const;
+
+	private:
+
+
+
+	private:
+
+	};
 };

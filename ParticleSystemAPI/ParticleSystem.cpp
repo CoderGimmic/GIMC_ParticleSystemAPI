@@ -694,6 +694,12 @@ namespace PS
 		unsigned numDestroyedParticles = 0;
 		unsigned destroyedParticles[MAX_PARTICLES];
 
+
+		/*for (unsigned i = 0; i < numDefinitions; i++)
+		{
+			particleDefinitions[i].ProcessAll();
+		}*/
+
 		for (unsigned i = 0; i < numParticles; i++)
 		{
 			if (particles[i].m_def > numDefinitions)
@@ -740,12 +746,12 @@ namespace PS
 			}
 		}
 
-		unsigned particlesDestroyed = 0;
+		//unsigned particlesDestroyed = 0;
 
 		for (unsigned i = 0; i < numDestroyedParticles; i++)
 		{
-			removeParticle(destroyedParticles[i] - particlesDestroyed);
-			particlesDestroyed++;
+			removeParticle(destroyedParticles[i]/* - particlesDestroyed*/);
+			//particlesDestroyed++;
 		}
 
 		for (unsigned i = 0; i < numCreatedParticles; i++)
@@ -1129,4 +1135,28 @@ namespace PS
 		return slot;
 	}
 #endif
+
+	/////////////////////////////////////////////////////////////////////
+	// ParticleIterator
+	/////////////////////////////////////////////////////////////////////
+
+	ParticleIterator::ParticleIterator(class ParticleSystem* particleSystem)
+	{
+
+	}
+
+	void ParticleIterator::operator++()
+	{
+
+	}
+
+	const Output& ParticleIterator::operator*() const
+	{
+		return Output();
+	}
+
+	const Output& ParticleIterator::operator->() const
+	{
+		return Output();
+	}
 };
