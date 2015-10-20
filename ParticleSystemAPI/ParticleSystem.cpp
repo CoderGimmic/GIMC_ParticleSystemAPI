@@ -373,6 +373,18 @@ namespace PS
 	ParticleSystem::ParticleDef::ParticleDef()
 	{
 		Reset();
+
+		particles = new ParticleOutput[MAX_PARTICLES];
+		emitters = new ParticleSystem::EmitterDef[MAX_EMITTERS];
+	}
+
+	ParticleSystem::ParticleDef::~ParticleDef()
+	{
+		delete[] particles;
+		particles = nullptr;
+
+		delete[] emitters;
+		emitters = nullptr;
 	}
 
 	void ParticleSystem::ParticleDef::Reset()
@@ -415,9 +427,84 @@ namespace PS
 		particle = (unsigned)-1;
 
 		customData = nullptr;
-
 		m_flagBits = 0x0000;
+
+		front = (unsigned)-1;
+		rear = (unsigned)-1;
+		numParticles = 0;
+		numEmitters = 0;
 	}
+
+	int ParticleSystem::ParticleDef::ProcessAll(float deltaTime)
+	{
+		int Result = 0;
+
+		unsigned numSpawnedParticles = 0;
+		Vector2 spawnLocations[MAX_PARTICLES];
+
+		// Particles
+		for (unsigned i = 0; i < numParticles; i++)
+		{
+			particles[i].m_life -= deltaTime;
+			if (particles[i].m_life <= 0.0f)
+			{
+				if (particle != (unsigned)-1)
+				{
+					spawnLocations[numSpawnedParticles++] = particles[i].location;
+				}
+
+				removeParticle(i);
+				Result--;
+
+				i--;
+				continue;
+			}
+
+			Process(particles[i], deltaTime);
+		}
+
+		// Emitters
+		for (unsigned i = 0; i < numEmitters; i++)
+		{
+			if (emitters[i].Update(deltaTime))
+			{
+				unsigned particleCount = emitters[i].particleCount;
+				for (unsigned j = 0; j < particleCount; j++)
+				{
+					spawnLocations[numSpawnedParticles++] = emitters[i].GetSpawnLocation();
+				}
+			}
+		}
+
+		for (unsigned i = 0; i < numSpawnedParticles; i++)
+		{
+			if (addParticle(spawnLocations[i]))
+			{
+				Result++;
+			}
+			else
+			{
+				break;
+			}
+		}
+
+		return Result;
+	}
+
+	unsigned ParticleSystem::ParticleDef::GetParticleCount()
+	{
+		return numParticles;
+	}
+
+	ParticleSystem::ParticleOutput* ParticleSystem::ParticleDef::GetParticle(unsigned particleIndex)
+	{
+		if (particleIndex > numParticles)
+			return &particles[0];
+
+		return &particles[particleIndex];
+	}
+
+	// Private
 
 	void ParticleSystem::ParticleDef::Process(ParticleOutput& output, float deltaTime)
 	{
@@ -483,8 +570,6 @@ namespace PS
 		if (m_flagBits & EParticleFlags::Flag_Rotation)
 			updateRotation(output, deltaTime);
 	}
-
-	// Private
 
 	float ParticleSystem::ParticleDef::updateSize(float currentSize, float deltaTime)
 	{
@@ -572,31 +657,89 @@ namespace PS
 		}
 	}
 
+	bool ParticleSystem::ParticleDef::addParticle(Vector2 location)
+	{
+		if (numParticles >= MAX_PARTICLES)
+			return false;
+
+		unsigned slot = numParticles;
+		initParticle(particles[slot]);
+		particles[slot].location = location;
+
+		numParticles++;
+
+		return true;
+	}
+
+	bool ParticleSystem::ParticleDef::removeParticle(unsigned particleIndex)
+	{
+		if (particleIndex > numParticles)
+			return false;
+
+		ParticleOutput temp = particles[numParticles];
+		particles[numParticles] = particles[particleIndex];
+		particles[particleIndex] = temp;
+
+		numParticles--;
+
+		return true;
+	}
+
+	void ParticleSystem::ParticleDef::initParticle(ParticleOutput& output)
+	{
+		output.m_life = Random::betweenf(minLife, maxLife);
+		output.scale = scale;
+		output.rotation = Random::betweenf(rotationMin, rotationMax);
+		output.size = Random::betweenf(sizeMin, sizeMax);
+		output.m_colorData.Set(colorStart, colorStartAlpha);
+		output.m_colorData.deltaFactor = 1.0f / output.m_life;
+
+		output.color = colorStart.TurnToRGB();
+		output.m_locationData.direction() = Random::betweenf(dirMin, dirMax);
+		output.m_locationData.speed() = Random::betweenf(speedMin, speedMax);
+
+		// Individual static velocity
+		if (m_flagBits & EParticleFlags::Flag_ConstVel)
+		{
+			output.m_locationData.Velocity = Velocity;
+		}
+		else if (speedMax != 0.0f && speedMin != speedMax) // Has speed?
+		{
+			// Has no 
+			if ((m_flagBits & EParticleFlags::Flag_Direction) == false
+				&& (m_flagBits & EParticleFlags::Flag_Speed) == false)
+			{
+				updateVelocity(output.m_locationData.speed(), output.m_locationData.direction());
+				output.m_locationData.Velocity = Velocity;
+
+				m_flagBits |= EParticleFlags::Flag_ConstVel;
+			}
+		}
+
+		output.customData = customData;
+	}
+
 	/////////////////////////////////////////////////////////////////////
 	// EmitterDef
 	/////////////////////////////////////////////////////////////////////
 
-	const float ParticleSystem::Emitterdef::PI_2 = 6.28318530717958647693f;
+	const float ParticleSystem::EmitterDef::PI_2 = 6.28318530717958647693f;
 
-	ParticleSystem::Emitterdef::Emitterdef()
+	ParticleSystem::EmitterDef::EmitterDef()
 	{
 		Reset();
 	}
 
-	void ParticleSystem::Emitterdef::Reset()
+	void ParticleSystem::EmitterDef::Reset()
 	{
-		particle = (unsigned)-1;
 		timer = 0.0f;
 		frequency = 1.0f;
 		particleCount = 1;
 		shape = EmitterShape::POINT;
 	}
 
-	bool ParticleSystem::Emitterdef::Update(float deltaTime)
+	bool ParticleSystem::EmitterDef::Update(float deltaTime)
 	{
-		if (particle == -1)
-			return false;
-
 		timer += deltaTime;
 		if (timer >= frequency)
 		{
@@ -607,7 +750,7 @@ namespace PS
 		return false;
 	}
 
-	Vector2 ParticleSystem::Emitterdef::GetSpawnLocation()
+	Vector2 ParticleSystem::EmitterDef::GetSpawnLocation()
 	{
 		switch (shape)
 		{
@@ -632,8 +775,8 @@ namespace PS
 			case EmitterShape::RECTANGLE:
 			{
 				return location +
-					Vector2(dims.X*-1.0f + Random::random(dims.X),
-							dims.Y*-1.0f + Random::random(dims.Y));
+					Vector2(dims.X*-1.0f + Random::random(dims.X*2.0f),
+							dims.Y*-1.0f + Random::random(dims.Y*2.0f));
 			}
 			break;
 		}
@@ -651,129 +794,39 @@ namespace PS
 
 		numDefinitions = 0;
 		particleDefinitions = new ParticleDef[MAX_PARTICLE_DEFS];
-		for (unsigned i = 0; i < MAX_PARTICLE_DEFS; i++)
-		{
-			particleDefinitions[i] = ParticleDef();
-		}
-		//numFreeDefinitionSlots = 0;
-
-		particleDefCacheIndex = (unsigned)-1;
-
-		numEmitters = 0;
-		emitters = new Emitterdef[MAX_EMITTERS];
-		for (unsigned i = 0; i < MAX_EMITTERS; i++)
-		{
-			emitters[i] = Emitterdef();
-		}
-		//numFreeEmitterSlots = 0;
 
 		numParticles = 0;
-		particles = new ParticleOutput[MAX_PARTICLES];
-		for (unsigned i = 0; i < MAX_PARTICLES; i++)
-		{
-			particles[i] = ParticleOutput();
-		}
-		//numFreeParticleSlots = 0;
 	}
 
 	ParticleSystem::~ParticleSystem()
 	{
 		delete[] particleDefinitions;
 		particleDefinitions = nullptr;
-		delete[] emitters;
-		emitters = nullptr;
-		delete[] particles;
-		particles = nullptr;
 	}
 
 	void ParticleSystem::Update(float deltaTime)
 	{
-		unsigned numCreatedParticles = 0;
-		unsigned createdParticles[MAX_PARTICLES];
-		Vector2 createdParticleLocations[MAX_PARTICLES];
-		unsigned numDestroyedParticles = 0;
-		unsigned destroyedParticles[MAX_PARTICLES];
-
-
-		/*for (unsigned i = 0; i < numDefinitions; i++)
+		for (unsigned i = 0; i < numDefinitions; i++)
 		{
-			particleDefinitions[i].ProcessAll();
-		}*/
-
-		for (unsigned i = 0; i < numParticles; i++)
-		{
-			if (particles[i].m_def > numDefinitions)
-			{
-				printf("INVALID particleDef: %u \n", particles[i].m_def);
-				continue;
-			}
-			particles[i].m_life -= deltaTime;
-			if (particles[i].m_life <= 0.0f)
-			{
-				destroyedParticles[numDestroyedParticles] = i;
-				numDestroyedParticles++;
-
-				
-
-				/*if (particleDefinitions[particles[i].m_def].particle != (unsigned)-1)
-				{
-					createdParticles[numCreatedParticles] 
-						= particleDefinitions[particles[i].m_def].particle;
-					createdParticleLocations[numCreatedParticles] = particles[i].location;
-					numCreatedParticles++;
-				}*/
-
-				continue;
-			}
-
-			particleDefinitions[particles[i].m_def].Process(particles[i], deltaTime);
-		}
-
-		for (unsigned i = 0; i < numEmitters; i++)
-		{
-			if (particles[i].m_def > numDefinitions)
-			{
-				printf("INVALID EmitterDef: %u \n", emitters[i].particle);
-			}
-			if (emitters[i].Update(deltaTime))
-			{
-				for (unsigned count = 0; count < emitters[i].particleCount; count++)
-				{
-					createdParticles[numCreatedParticles] = emitters[i].particle;
-					createdParticleLocations[numCreatedParticles] = emitters[i].GetSpawnLocation();
-					numCreatedParticles++;
-				}
-			}
-		}
-
-		//unsigned particlesDestroyed = 0;
-
-		for (unsigned i = 0; i < numDestroyedParticles; i++)
-		{
-			removeParticle(destroyedParticles[i]/* - particlesDestroyed*/);
-			//particlesDestroyed++;
-		}
-
-		for (unsigned i = 0; i < numCreatedParticles; i++)
-		{
-			if (!addParticle(createdParticles[i], createdParticleLocations[i]))
-				break;
+			numParticles += particleDefinitions[i].ProcessAll(deltaTime);
 		}
 	}
 
 	Particle ParticleSystem::CreateParticle()
 	{
 		Particle handle;
-		handle.uniqueID = //getFreeDefenitionSlot();
+		handle.uniqueID = numDefinitions;
 		numDefinitions++;
 		return handle;
 	}
 
-	Emitter ParticleSystem::CreateEmitter()
+	Emitter ParticleSystem::CreateEmitter(Particle spawnedParticle)
 	{
 		Emitter handle;
-		handle.uniqueID = numEmitters;// getFreeEmitterSlot();
-		numEmitters++;
+		handle.particleID = spawnedParticle.uniqueID;
+		handle.uniqueID = particleDefinitions[handle.particleID].numEmitters;
+		particleDefinitions[handle.particleID].numEmitters++;
+
 		return handle;
 	}
 
@@ -781,68 +834,67 @@ namespace PS
 	{
 		particleDefinitions[particle.uniqueID].Reset();
 
-		if (particleDefCacheIndex == particle.uniqueID)
-		{
-			particleDefCacheIndex = (unsigned)-1;
-		}
-
-		//addFreeDefinitionSlot(particle.uniqueID);
 		numDefinitions--;
 	}
 
 	void ParticleSystem::DestroyEmitter(Emitter emitter)
 	{
-		emitters[emitter.uniqueID].Reset();
-
-		//addFreeEmitterSlot(emitter.uniqueID);
-		numEmitters--;
+		particleDefinitions[emitter.particleID].emitters[emitter.uniqueID].Reset();
 	}
 
-	void ParticleSystem::SpawnParticle(Particle particle, Vector2 location)
+	void ParticleSystem::SpawnParticle(Particle particle, Vector2 location, unsigned spawnCount)
 	{
-		addParticle(particle.uniqueID, location);
+		for (unsigned i = 0; i < spawnCount; i++)
+		{
+			if (particleDefinitions[particle.uniqueID].addParticle(location))
+				numParticles++;
+		}
 	}
 
 	void ParticleSystem::ClearVisibleParticles()
 	{
+		for (unsigned i = 0; i < numDefinitions; i++)
+		{
+			particleDefinitions[i].numParticles = 0;
+		}
 		numParticles = 0;
-	}
-
-	void ParticleSystem::EmitterSetParticle(Emitter emitter, Particle particle, unsigned spawnCount)
-	{
-		PS::ParticleSystem::Emitterdef& def = emitters[emitter.uniqueID];
-		def.particle = particle.uniqueID;
-		def.particleCount = spawnCount;
 	}
 
 	void ParticleSystem::EmitterSetLocation(Emitter emitter, Vector2 location)
 	{
-		emitters[emitter.uniqueID].location = location;
+		EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
+		def.location = location;
 	}
 
 	void ParticleSystem::EmitterSetPoint(Emitter emitter, Vector2 location)
 	{
-		emitters[emitter.uniqueID].shape = Emitterdef::EmitterShape::POINT;
-		emitters[emitter.uniqueID].location = location;
+		EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
+		def.shape = EmitterDef::EmitterShape::POINT;
+		def.location = location;
 	}
 
 	void ParticleSystem::EmitterSetCircle(Emitter emitter, Vector2 location, float radius)
 	{
-		emitters[emitter.uniqueID].shape = Emitterdef::EmitterShape::CIRCLE;
-		emitters[emitter.uniqueID].location = location;
-		emitters[emitter.uniqueID].dims = Vector2(radius, radius);
+		EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
+		def.shape = EmitterDef::EmitterShape::CIRCLE;
+		def.location = location;
+		def.dims = Vector2(radius, radius);
 	}
 
 	void ParticleSystem::EmitterSetRectangle(Emitter emitter, Vector2 location, Vector2 dimension)
 	{
-		emitters[emitter.uniqueID].shape = Emitterdef::EmitterShape::RECTANGLE;
-		emitters[emitter.uniqueID].location = location;
-		emitters[emitter.uniqueID].dims = dimension;
+		EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
+
+		def.shape = EmitterDef::EmitterShape::RECTANGLE;
+		def.location = location;
+		def.dims = dimension;
 	}
 
-	void ParticleSystem::EmitterSetFrequency(Emitter emitter, float frequency)
+	void ParticleSystem::EmitterSetFrequency(Emitter emitter, float frequency, unsigned spawnCount)
 	{
-		emitters[emitter.uniqueID].frequency = frequency;
+		EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
+		def.frequency = frequency;
+		def.particleCount = spawnCount;
 	}
 
 	void ParticleSystem::ParticleSetLifetime(Particle particle, float minLife, float maxLife)
@@ -983,180 +1035,134 @@ namespace PS
 		particleDefinitions[particle.uniqueID].customData = data;
 	}
 
-	unsigned ParticleSystem::GetParticleCount()
+	unsigned ParticleSystem::GetDefinitionCount()
+	{
+		return numDefinitions;
+	}
+
+	unsigned ParticleSystem::GetSpawnedParticleTypeCount(unsigned particle)
+	{
+		return particleDefinitions[particle].numParticles;
+	}
+
+	unsigned ParticleSystem::GetSpawnedParticleCount()
 	{
 		return numParticles;
 	}
 
 	ParticleSystem::ParticleOutput* ParticleSystem::GetParticle(unsigned particleIndex)
 	{
-		if (particleIndex > numParticles)
-			return &particles[numParticles];
+		if (particleIndex > particleDefinitions[0].numParticles)
+			return &particleDefinitions[0].particles[particleDefinitions[0].numParticles];
 
-		return &particles[particleIndex];
+		return &particleDefinitions[0].particles[particleIndex];
 	}
 
 	// Private
 
-	bool ParticleSystem::addParticle(unsigned defIndex, Vector2 location)
+	ParticleSystem::ParticleDef* ParticleSystem::getDefenitionFromIndex(unsigned& index)
 	{
-		if (numParticles >= MAX_PARTICLES)
-			return false;
+		if (numParticles == 0)
+			return nullptr;
 
-		unsigned slot = numParticles;// getFreeParticleSlot();
-		initParticle(particles[slot], defIndex);
-		particles[slot].location = location;
-		
-		numParticles++;
-
-		return true;
-	}
-
-	void ParticleSystem::removeParticle(unsigned particleIndex)
-	{
-		//addFreeParticleSlot(particleIndex);
-
-		//printf("%u \n", particleIndex);
-
-		ParticleOutput temp = particles[numParticles];
-		particles[numParticles] = particles[particleIndex];
-		particles[particleIndex] = temp;
-
-		numParticles--;
-	}
-
-	void ParticleSystem::initParticle(ParticleOutput& output, unsigned defIndex)
-	{
-		ParticleDef def;
-		/*
-		if (defIndex == particleDefCacheIndex)
+		for (unsigned i = index; i < numDefinitions; i++)
 		{
-			def = particleDefCache;
-		}
-		else*/
-		{
-			def = particleDefinitions[defIndex];
-
-			particleDefCacheIndex = defIndex;
-			particleDefCache = def;
-		}
-
-		output.m_def = defIndex;
-		output.m_life = Random::betweenf(def.minLife, def.maxLife);
-		output.scale = def.scale;
-		output.rotation = Random::betweenf(def.rotationMin, def.rotationMax);
-		output.size = Random::betweenf(def.sizeMin, def.sizeMax);
-		output.m_colorData.Set(def.colorStart, def.colorStartAlpha);
-		output.m_colorData.deltaFactor = 1.0f / output.m_life;
-		
-		output.color = def.colorStart.TurnToRGB();
-		output.m_locationData.direction() = Random::betweenf(def.dirMin, def.dirMax);
-		output.m_locationData.speed() = Random::betweenf(def.speedMin, def.speedMax);
-
-		// Individual static velocity
-		// Has speed
-		if (def.speedMax != 0.0f && def.speedMin != def.speedMax)
-		{
-			// Has no 
-			if ((def.m_flagBits & EParticleFlags::Flag_Direction) == false
-				&& (def.m_flagBits & EParticleFlags::Flag_Speed) == false)
+			if (particleDefinitions[i].numParticles > 0)
 			{
-				def.updateVelocity(output.m_locationData.speed(), output.m_locationData.direction());
-				output.m_locationData.Velocity = def.Velocity;
-				
-				particleDefinitions[defIndex].m_flagBits |= EParticleFlags::Flag_ConstVel;
+				index = i;
+				return &particleDefinitions[i];
 			}
 		}
 
-		output.customData = def.customData;
+		return nullptr;
 	}
-
-#if 0
-	void ParticleSystem::addFreeDefinitionSlot(unsigned slot)
-	{
-		numFreeDefinitionSlots++;
-		freeDefinitionSlots[numFreeDefinitionSlots] = slot;
-	}
-
-	void ParticleSystem::addFreeParticleSlot(unsigned slot)
-	{
-		numFreeDefinitionSlots++;
-		freeParticleSlots[numFreeParticleSlots] = slot;
-	}
-
-	void ParticleSystem::addFreeEmitterSlot(unsigned slot)
-	{
-		numFreeDefinitionSlots++;
-		freeEmitterSlots[numFreeEmitterSlots] = slot;
-	}
-
-	unsigned ParticleSystem::getFreeDefenitionSlot()
-	{
-		if (numFreeDefinitionSlots == 0)
-		{
-			if (numDefinitions == MAX_PARTICLE_DEFS)
-				return 0;
-			else
-				return numDefinitions;
-		}
-
-		unsigned slot = freeDefinitionSlots[numFreeDefinitionSlots];
-		numFreeDefinitionSlots--;
-		return slot;
-	}
-
-	unsigned ParticleSystem::getFreeEmitterSlot()
-	{
-		if (numFreeEmitterSlots == 0)
-		{
-			if (numEmitters == MAX_EMITTERS)
-				return 0;
-			else
-				return numEmitters;
-		}
-
-		unsigned slot = freeEmitterSlots[numFreeEmitterSlots];
-		numFreeEmitterSlots--;
-		return slot;
-	}
-
-	unsigned ParticleSystem::getFreeParticleSlot()
-	{
-		if (numFreeParticleSlots == 0)
-		{
-			if (numParticles == MAX_PARTICLES)
-				return 0;
-			else
-				return numParticles;
-		}
-
-		unsigned slot = freeParticleSlots[numFreeParticleSlots];
-		numFreeParticleSlots--;
-		return slot;
-	}
-#endif
 
 	/////////////////////////////////////////////////////////////////////
 	// ParticleIterator
 	/////////////////////////////////////////////////////////////////////
 
-	ParticleIterator::ParticleIterator(class ParticleSystem* particleSystem)
+	ParticleIterator::ParticleIterator(class ParticleSystem& particleSystem)
 	{
+		partSystem = &particleSystem;
 
+		numDefinitions = partSystem->numDefinitions;
+		defIndex = 0;
+		numParticlesInDef = 0;
+		particleIndex = 0;
+
+		target = nullptr;
+		currentDef = nullptr;
+
+		reachedEnd = partSystem->GetSpawnedParticleCount() == 0 ? true : false;
+
+		if (reachedEnd == false)
+		{
+			currentDef = partSystem->getDefenitionFromIndex(defIndex);
+			if (currentDef != nullptr)
+			{
+				numParticlesInDef = currentDef->GetParticleCount();
+				target = currentDef->GetParticle(particleIndex);
+			}
+			else
+			{
+				reachedEnd = true;
+			}
+		}
 	}
 
 	void ParticleIterator::operator++()
 	{
+		if (particleIndex < numParticlesInDef)
+		{
+			particleIndex++;
+			target = currentDef->GetParticle(particleIndex);
 
+			return;
+		}
+		else
+		{
+			defIndex++;
+			currentDef = partSystem->getDefenitionFromIndex(defIndex);
+			if (currentDef == nullptr)
+			{
+				reachedEnd = true;
+
+				return;
+			}
+			else
+			{
+				particleIndex = 0;
+				numParticlesInDef = currentDef->GetParticleCount();
+				target = currentDef->GetParticle(particleIndex);
+
+				return;
+			}
+		}
+
+		assert("Should never get here");
+
+		reachedEnd = true;
+
+		return;
+	}
+
+	void ParticleIterator::operator++(int)
+	{
+		++(*this);
 	}
 
 	const Output& ParticleIterator::operator*() const
 	{
-		return Output();
+		return *target;
 	}
 
 	const Output& ParticleIterator::operator->() const
 	{
-		return Output();
+		return *target;
+	}
+
+	ParticleIterator::operator bool() const
+	{
+		return !reachedEnd;
 	}
 };

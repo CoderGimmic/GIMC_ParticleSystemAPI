@@ -90,6 +90,7 @@ namespace PS
 
 	class ParticleSystem
 	{
+		friend class ParticleIterator;
 	public:
 
 		struct ParticleOutput
@@ -179,15 +180,21 @@ namespace PS
 			Flag_Flag16		= 0x8000  // 16
 		};
 
+		class EmitterDef;
+
 		class ParticleDef
 		{
 			friend class ParticleSystem;
 		public:
 			
 			ParticleDef();
+			~ParticleDef();
 
 			void Reset();
-			void Process(ParticleOutput& output, float deltaTime);
+			int ProcessAll(float deltaTime);
+
+			unsigned GetParticleCount();
+			ParticleOutput* GetParticle(unsigned particleindex);
 
 		public:
 			
@@ -228,6 +235,8 @@ namespace PS
 
 		private:
 
+			void Process(ParticleOutput& output, float deltaTime);
+
 			float updateSize(float currentSize, float deltaTime);
 			void updateColor(ParticleOutput& output, float deltaTime);
 			float updateSpeed(float currentSpeed, float deltaTime);
@@ -235,16 +244,26 @@ namespace PS
 			void updateVelocity(float currentSpeed, float currentDirection);
 			void updateRotation(ParticleOutput& output, float deltaTime);
 
+			bool addParticle(Vector2 location);
+			bool removeParticle(unsigned particleIndex);
+
+			void initParticle(ParticleOutput& info);
+
 		private:
 
 			static const float degToRad;
 
 			unsigned short m_flagBits;
 
+			unsigned numParticles;
+			unsigned front, rear;
 			ParticleOutput* particles;
+
+			unsigned numEmitters;
+			EmitterDef* emitters;
 		};
 
-		class Emitterdef
+		class EmitterDef
 		{
 		public:
 
@@ -255,7 +274,7 @@ namespace PS
 				RECTANGLE,
 			};
 
-			Emitterdef();
+			EmitterDef();
 
 			void Reset();
 			bool Update(float deltaTime);
@@ -266,7 +285,7 @@ namespace PS
 			Vector2 location;
 			EmitterShape shape;
 			
-			unsigned particle;
+			//unsigned particle;
 
 			float frequency;
 			unsigned particleCount;
@@ -289,20 +308,19 @@ namespace PS
 		void Update(float deltaTime);
 
 		Particle CreateParticle();
-		Emitter CreateEmitter();
+		Emitter CreateEmitter(Particle spawnedParticle);
 		void DestroyParticle(Particle particle);
 		void DestroyEmitter(Emitter emitter);
 
-		void SpawnParticle(Particle particle, Vector2 location);
+		void SpawnParticle(Particle particle, Vector2 location, unsigned spawnCount = 1);
 
 		void ClearVisibleParticles();
 
-		void EmitterSetParticle(Emitter emitter, Particle particle, unsigned spawnCount = 1);
 		void EmitterSetLocation(Emitter emitter, Vector2 location);
 		void EmitterSetPoint(Emitter emitter, Vector2 location);
 		void EmitterSetCircle(Emitter emitter, Vector2 location, float radius);
 		void EmitterSetRectangle(Emitter emitter, Vector2 location, Vector2 dimension);
-		void EmitterSetFrequency(Emitter emitter, float frequency);
+		void EmitterSetFrequency(Emitter emitter, float frequency, unsigned spawnCount = 1);
 
 		void ParticleSetLifetime(Particle particle, float minLife, float maxLife);
 		void ParticleSetSize(Particle particle, float sizeMin, float sizeMax, float sizeInc = 0.0f, float sizeWiggle = 0.0f);
@@ -316,48 +334,24 @@ namespace PS
 		void ParticleSetSpawnedParticle(Particle particle, Particle spawnedParticle);
 		void ParticleSetCustomData(Particle particle, void* data);
 
-		unsigned GetParticleCount();
+		unsigned GetDefinitionCount();
+		unsigned GetSpawnedParticleTypeCount(unsigned particle);
+
+		unsigned GetSpawnedParticleCount();
 		ParticleOutput* GetParticle(unsigned ParticleIndex);
 
 	private:
 
-		bool addParticle(unsigned defIndex, Vector2 location);
-		void removeParticle(unsigned particleIndex);
-
-		void initParticle(ParticleOutput& info, unsigned defIndex);
-
-#if 0
-		void addFreeDefinitionSlot(unsigned slot);
-		void addFreeParticleSlot(unsigned slot);
-		void addFreeEmitterSlot(unsigned slot);
-		unsigned getFreeDefenitionSlot();
-		unsigned getFreeEmitterSlot();
-		unsigned getFreeParticleSlot();
-#endif
+		ParticleDef* getDefenitionFromIndex(unsigned& index);
 
 	private:
 
 		static const int MAX_PARTICLE_DEFS = 100;
+		static const int MAX_PARTICLES = 10000;
+		static const int MAX_EMITTERS = 100;
 		unsigned numDefinitions;
 		ParticleDef* particleDefinitions;
-		
-		/*unsigned numFreeDefinitionSlots;
-		unsigned freeDefinitionSlots[MAX_PARTICLE_DEFS];*/
-
-		unsigned particleDefCacheIndex;
-		ParticleDef particleDefCache;
-
-		static const int MAX_EMITTERS = 100;
-		unsigned numEmitters;
-		Emitterdef* emitters/*[MAX_EMITTERS]*/;
-		/*unsigned numFreeEmitterSlots;
-		unsigned freeEmitterSlots[MAX_EMITTERS];*/
-
-		static const int MAX_PARTICLES = 1000;
 		unsigned numParticles;
-		ParticleOutput* particles;
-		/*unsigned numFreeParticleSlots;
-		unsigned freeParticleSlots[MAX_PARTICLES];*/
 	};
 
 	typedef ParticleSystem::ParticleOutput Output;
@@ -366,18 +360,29 @@ namespace PS
 	{
 	public:
 
-		ParticleIterator(class ParticleSystem* particleSystem);
+		ParticleIterator(class ParticleSystem& particleSystem);
 		ParticleIterator() = delete;
 
 		void operator++();
+		void operator++(int);
 		const Output& operator*() const;
 		const Output& operator->() const;
+		operator bool() const;
 
 	private:
 
-
-
 	private:
 
+		ParticleSystem* partSystem;
+
+		Output* target;
+		ParticleSystem::ParticleDef* currentDef;
+
+		unsigned numDefinitions;
+		unsigned numParticlesInDef;
+		unsigned defIndex;
+		unsigned particleIndex;
+
+		bool reachedEnd;
 	};
 };
