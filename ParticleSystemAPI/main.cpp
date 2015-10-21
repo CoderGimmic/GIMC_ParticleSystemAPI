@@ -13,6 +13,8 @@
 #include <iostream>
 #include <string>
 
+//#include <vld.h>
+
 float deltaTime = 0.0f;
 sf::Clock deltaClock;
 
@@ -31,10 +33,8 @@ int main(int argc, const char* argv[])
 	// Load a sprite to display
 	// Start the game loop
 
-	std::cout << std::endl << "ParticleSystem: " <<
-		sizeof(PS::ParticleSystem) /* / 1024*/;
-	std::cout << std::endl << "ParticleOutput: " <<
-		(sizeof(PS::ParticleSystem::ParticleOutput)*1000)/1024;
+	std::cout << std::endl << "ParticleSystem size: " <<
+		sizeof(PS::ParticleSystem);
 
 	std::cout << std::endl;
 
@@ -49,7 +49,7 @@ int main(int argc, const char* argv[])
 	// FIRE
 	/*-------------------------------------*/
 	PS::Particle fire = partSystem.CreateParticle();
-	partSystem.ParticleSetSize(fire, 8, 32, 5);
+	partSystem.ParticleSetSize(fire, 1, 1, 5);
 	partSystem.ParticleSetScale(fire, 1.0f, 0.1f);
 	partSystem.ParticleSetRotation(fire, 0.0f, 360.0f, 0.0f, 0, false);
 	partSystem.ParticleSetSpeed(fire, 96, 128, 96);
@@ -156,7 +156,6 @@ int main(int argc, const char* argv[])
 
 		// render particlesystem
 		for (PS::ParticleIterator it(partSystem); it; it++)
-			//for (unsigned i = 0; i < partSystem.GetParticleCount(); i++)
 		{
 			PS::Output particle = (*it);//partSystem.GetParticle(i);
 			PS::Vector2 location = particle.location;

@@ -11,15 +11,17 @@
 
 namespace PS
 {
-	class Particle
+	struct Particle
 	{
 		friend class ParticleSystem;
+	private:
 		unsigned uniqueID;
 	};
 
-	class Emitter
+	struct Emitter
 	{
 		friend class ParticleSystem;
+	private:
 		unsigned uniqueID;
 		unsigned particleID;
 	};
@@ -91,6 +93,7 @@ namespace PS
 	class ParticleSystem
 	{
 		friend class ParticleIterator;
+
 	public:
 
 		struct ParticleOutput
@@ -101,16 +104,9 @@ namespace PS
 			struct LocationData
 			{
 				Vector2 Velocity;
-				/*float direction;
-				float speed;*/
 
 				float& speed() { return Velocity.X; }
 				float& direction() { return Velocity.Y; }
-
-				LocationData()
-					/*: direction(0.0f)
-					, speed(0.0f)*/
-				{}
 			};
 
 			struct ColorData
@@ -128,6 +124,7 @@ namespace PS
 			};
 
 		public:
+
 			Vector2		location;
 			Vector2		scale;
 			float		rotation;
@@ -139,10 +136,9 @@ namespace PS
 				: scale(1.0f, 1.0f)
 				, rotation(0.0f)
 				, size(1.0f)
-				, m_def(-1)
 			{
-				m_locationData = LocationData();
-				m_colorData = ColorData();
+				locationData = LocationData();
+				colorData = ColorData();
 			}
 
 			~ParticleOutput()
@@ -151,11 +147,10 @@ namespace PS
 
 		private:
 
-			unsigned m_def;
-			float m_life;
+			float lifeRemaining;
 
-			LocationData m_locationData;
-			ColorData m_colorData;
+			LocationData locationData;
+			ColorData colorData;
 		};
 
 	private:
@@ -253,10 +248,10 @@ namespace PS
 
 			static const float degToRad;
 
-			unsigned short m_flagBits;
+			unsigned short flagBits;
 
 			unsigned numParticles;
-			unsigned front, rear;
+			unsigned queueFront, queueRear;
 			ParticleOutput* particles;
 
 			unsigned numEmitters;

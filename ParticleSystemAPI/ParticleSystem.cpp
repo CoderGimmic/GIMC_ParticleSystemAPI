@@ -9,10 +9,9 @@
 
 #include <stdlib.h>
 
-#include <string>
+#if 0
 #include <bitset>
-
-#include <assert.h>
+#include <string>
 
 namespace util {
 	template<typename TInteger>
@@ -23,6 +22,7 @@ namespace util {
 		return stringValue;
 	}
 }
+#endif
 
 namespace PS
 {
@@ -427,10 +427,10 @@ namespace PS
 		particle = (unsigned)-1;
 
 		customData = nullptr;
-		m_flagBits = 0x0000;
+		flagBits = 0x0000;
 
-		front = (unsigned)-1;
-		rear = (unsigned)-1;
+		queueFront = (unsigned)-1;
+		queueRear = (unsigned)-1;
 		numParticles = 0;
 		numEmitters = 0;
 	}
@@ -445,8 +445,8 @@ namespace PS
 		// Particles
 		for (unsigned i = 0; i < numParticles; i++)
 		{
-			particles[i].m_life -= deltaTime;
-			if (particles[i].m_life <= 0.0f)
+			particles[i].lifeRemaining -= deltaTime;
+			if (particles[i].lifeRemaining <= 0.0f)
 			{
 				if (particle != (unsigned)-1)
 				{
@@ -509,29 +509,29 @@ namespace PS
 	void ParticleSystem::ParticleDef::Process(ParticleOutput& output, float deltaTime)
 	{
 		//Size
-		if (m_flagBits & EParticleFlags::Flag_Size)
+		if (flagBits & EParticleFlags::Flag_Size)
 		{
 			output.size = updateSize(output.size, deltaTime);
 		}
 
 		// Color
-		if (m_flagBits & EParticleFlags::Flag_Color)
+		if (flagBits & EParticleFlags::Flag_Color)
 			updateColor(output, deltaTime);
 
 		// Velocity
-		if (m_flagBits & EParticleFlags::Flag_Location)
+		if (flagBits & EParticleFlags::Flag_Location)
 		{
 			bool shouldUpdateSpeed = 
-				((m_flagBits & EParticleFlags::Flag_Speed) ? true : false);
+				((flagBits & EParticleFlags::Flag_Speed) ? true : false);
 			bool shouldUpdateDirection = 
-				((m_flagBits & EParticleFlags::Flag_Direction) ? true : false);
+				((flagBits & EParticleFlags::Flag_Direction) ? true : false);
 			float currentSpeed = 0.0f;
 			float currentDirection = 0.0f;
 			ParticleOutput::LocationData locationData;
 
 			if (shouldUpdateSpeed || shouldUpdateDirection)
 			{
-				locationData = output.m_locationData;
+				locationData = output.locationData;
 				currentSpeed = locationData.speed();
 				currentDirection = locationData.direction();
 			}
@@ -553,7 +553,7 @@ namespace PS
 			{
 				locationData.speed() = currentSpeed;
 				locationData.direction() = currentDirection;
-				output.m_locationData = locationData;
+				output.locationData = locationData;
 
 				updateVelocity(currentSpeed, currentDirection);
 			}
@@ -561,13 +561,13 @@ namespace PS
 			// Location
 			output.location += Velocity * deltaTime;
 		}
-		else if (m_flagBits & EParticleFlags::Flag_ConstVel)
+		else if (flagBits & EParticleFlags::Flag_ConstVel)
 		{
-			output.location += output.m_locationData.Velocity * deltaTime;
+			output.location += output.locationData.Velocity * deltaTime;
 		}
 		
 		// Rotation
-		if (m_flagBits & EParticleFlags::Flag_Rotation)
+		if (flagBits & EParticleFlags::Flag_Rotation)
 			updateRotation(output, deltaTime);
 	}
 
@@ -579,7 +579,7 @@ namespace PS
 
 	void ParticleSystem::ParticleDef::updateColor(ParticleOutput& output,float deltaTime)
 	{
-		ParticleOutput::ColorData data = output.m_colorData;
+		ParticleOutput::ColorData data = output.colorData;
 		Color Result = output.color;
 		float colorH = data.H;
 		float colorS = data.S;
@@ -593,7 +593,7 @@ namespace PS
 		data.A = colorA;
 
 		// HSL
-		if (m_flagBits & EParticleFlags::Flag_HSL)
+		if (flagBits & EParticleFlags::Flag_HSL)
 		{
 			colorH += colorDeltaH * deltaTime * data.deltaFactor;
 			colorS += colorDeltaS * deltaTime * data.deltaFactor;
@@ -616,7 +616,7 @@ namespace PS
 		Result.A = (unsigned char)colorA;
 
 		output.color = Result;
-		output.m_colorData = data;
+		output.colorData = data;
 	}
 
 	float ParticleSystem::ParticleDef::updateSpeed(float currentSpeed, float deltaTime)
@@ -650,7 +650,7 @@ namespace PS
 	void ParticleSystem::ParticleDef::updateRotation(ParticleOutput& output, float deltaTime)
 	{
 		if (rotationRelative)
-			output.rotation = output.m_locationData.direction();
+			output.rotation = output.locationData.direction();
 		else
 		{
 			output.rotation += rotationInc * deltaTime;
@@ -676,9 +676,9 @@ namespace PS
 		if (particleIndex > numParticles)
 			return false;
 
-		ParticleOutput temp = particles[numParticles];
+		ParticleOutput lastElement = particles[numParticles];
 		particles[numParticles] = particles[particleIndex];
-		particles[particleIndex] = temp;
+		particles[particleIndex] = lastElement;
 
 		numParticles--;
 
@@ -687,36 +687,39 @@ namespace PS
 
 	void ParticleSystem::ParticleDef::initParticle(ParticleOutput& output)
 	{
-		output.m_life = Random::betweenf(minLife, maxLife);
-		output.scale = scale;
-		output.rotation = Random::betweenf(rotationMin, rotationMax);
+		output.lifeRemaining = Random::betweenf(minLife, maxLife);
 		output.size = Random::betweenf(sizeMin, sizeMax);
-		output.m_colorData.Set(colorStart, colorStartAlpha);
-		output.m_colorData.deltaFactor = 1.0f / output.m_life;
-
+		output.rotation = Random::betweenf(rotationMin, rotationMax);
+		output.scale = scale;
+		
+		output.colorData.Set(colorStart, colorStartAlpha);
+		output.colorData.deltaFactor = (1.0f / output.lifeRemaining);
 		output.color = colorStart.TurnToRGB();
-		output.m_locationData.direction() = Random::betweenf(dirMin, dirMax);
-		output.m_locationData.speed() = Random::betweenf(speedMin, speedMax);
-
-		// Individual static velocity
-		if (m_flagBits & EParticleFlags::Flag_ConstVel)
-		{
-			output.m_locationData.Velocity = Velocity;
-		}
-		else if (speedMax != 0.0f && speedMin != speedMax) // Has speed?
-		{
-			// Has no 
-			if ((m_flagBits & EParticleFlags::Flag_Direction) == false
-				&& (m_flagBits & EParticleFlags::Flag_Speed) == false)
-			{
-				updateVelocity(output.m_locationData.speed(), output.m_locationData.direction());
-				output.m_locationData.Velocity = Velocity;
-
-				m_flagBits |= EParticleFlags::Flag_ConstVel;
-			}
-		}
 
 		output.customData = customData;
+
+		// Individual static velocity
+		if (flagBits & EParticleFlags::Flag_ConstVel)
+		{
+			output.locationData.Velocity = Velocity;
+			return;
+		}
+		
+		output.locationData.direction() = Random::betweenf(dirMin, dirMax);
+		output.locationData.speed() = Random::betweenf(speedMin, speedMax);
+		
+		if (speedMax != 0.0f && speedMin != speedMax) // Has speed?
+		{
+			// Has no variying velocity
+			if ((flagBits & EParticleFlags::Flag_Direction) == false
+				&& (flagBits & EParticleFlags::Flag_Speed) == false)
+			{
+				updateVelocity(output.locationData.speed(), output.locationData.direction());
+				output.locationData.Velocity = Velocity;
+
+				flagBits |= EParticleFlags::Flag_ConstVel;
+			}
+		}
 	}
 
 	/////////////////////////////////////////////////////////////////////
@@ -916,7 +919,7 @@ namespace PS
 		def.sizeWiggle = sizeWiggle;
 
 		if (sizeInc != 0.0f || sizeWiggle != 0.0f)
-			def.m_flagBits |= EParticleFlags::Flag_Size;
+			def.flagBits |= EParticleFlags::Flag_Size;
 	}
 
 	void ParticleSystem::ParticleSetRotation(Particle particle, float rotMin, float rotMax, float rotInc /*= 0.0f*/, float rotWiggle /*= 0.0f*/, bool rotRelative /*= false*/)
@@ -929,7 +932,7 @@ namespace PS
 		def.rotationRelative = rotRelative;
 
 		if (rotInc != 0.0f || rotWiggle != 0.0f)
-			def.m_flagBits |= EParticleFlags::Flag_Rotation;
+			def.flagBits |= EParticleFlags::Flag_Rotation;
 	}
 
 	void ParticleSystem::ParticleSetScale(Particle particle, float scaleX, float scaleY)
@@ -960,15 +963,15 @@ namespace PS
 			if (def.colorStart.Luminance != def.colorEnd.Luminance)
 				def.colorDeltaL = float(def.colorStart.Luminance - def.colorEnd.Luminance) * -1.0f;
 		
-			def.m_flagBits |= EParticleFlags::Flag_HSL;
-			def.m_flagBits |= EParticleFlags::Flag_Color;
+			def.flagBits |= EParticleFlags::Flag_HSL;
+			def.flagBits |= EParticleFlags::Flag_Color;
 		}
 		
 		if (colorStart.A != colorEnd.A)
 		{
 			def.colorDeltaA = float(def.colorStartAlpha - def.colorEndAlpha) * -1.0f;
 
-			def.m_flagBits |= EParticleFlags::Flag_Color;
+			def.flagBits |= EParticleFlags::Flag_Color;
 		}
 	}
 
@@ -982,13 +985,13 @@ namespace PS
 
 		if (dirInc != 0.0f || dirWiggle != 0.0f)
 		{
-			def.m_flagBits |= EParticleFlags::Flag_Direction;
-			def.m_flagBits |= EParticleFlags::Flag_Location;
+			def.flagBits |= EParticleFlags::Flag_Direction;
+			def.flagBits |= EParticleFlags::Flag_Location;
 		}
 		else if (def.dirMax != 0.0f && def.dirMin == def.dirMax)
 		{
 			def.updateVelocity(def.speedMax, def.dirMax);
-			def.m_flagBits |= EParticleFlags::Flag_Location;
+			def.flagBits |= EParticleFlags::Flag_Location;
 		}
 	}
 
@@ -1002,13 +1005,13 @@ namespace PS
 
 		if (speedInc != 0.0f || speedWiggle != 0.0f)
 		{
-			def.m_flagBits |= EParticleFlags::Flag_Speed;
-			def.m_flagBits |= EParticleFlags::Flag_Location;
+			def.flagBits |= EParticleFlags::Flag_Speed;
+			def.flagBits |= EParticleFlags::Flag_Location;
 		}
 		else if (def.speedMax != 0.0f && def.speedMin == def.speedMax)
 		{
 			def.updateVelocity(def.speedMax, def.dirMax);
-			def.m_flagBits |= EParticleFlags::Flag_Location;
+			def.flagBits |= EParticleFlags::Flag_Location;
 		}
 	}
 
@@ -1019,9 +1022,9 @@ namespace PS
 
 		if (velocity != Vector2(0.0f, 0.0f))
 		{
-			def.m_flagBits |= EParticleFlags::Flag_Location;
-			def.m_flagBits &= ~EParticleFlags::Flag_Speed;
-			def.m_flagBits &= ~EParticleFlags::Flag_Direction;
+			def.flagBits |= EParticleFlags::Flag_Location;
+			def.flagBits &= ~EParticleFlags::Flag_Speed;
+			def.flagBits &= ~EParticleFlags::Flag_Direction;
 		}
 	}
 
@@ -1138,12 +1141,6 @@ namespace PS
 				return;
 			}
 		}
-
-		assert("Should never get here");
-
-		reachedEnd = true;
-
-		return;
 	}
 
 	void ParticleIterator::operator++(int)
