@@ -60,12 +60,12 @@ int main(int argc, const char* argv[])
 	PS::Emitter fireplace = partSystem.CreateEmitter(fire);
 	partSystem.EmitterSetPoint(fireplace, PS::Vector2(256.f, 256.f));
 	partSystem.EmitterSetRectangle(fireplace, PS::Vector2(256, 256), PS::Vector2(256, 8));
-	partSystem.EmitterSetFrequency(fireplace, 0.00001f, 5);
+	partSystem.EmitterSetFrequency(fireplace, 0.551f, 5);
 
 	// Emitter #2
-	/*PS::Emitter constFire = partSystem.CreateEmitter(fire);
+	PS::Emitter constFire = partSystem.CreateEmitter(fire);
 	partSystem.EmitterSetCircle(constFire, PS::Vector2(64, 640), 16);
-	partSystem.EmitterSetFrequency(constFire, 0.00001f);*/
+	partSystem.EmitterSetFrequency(constFire, 0.05001f);
 	
 	// FIRE 2
 	/*-------------------------------------*/
@@ -89,7 +89,7 @@ int main(int argc, const char* argv[])
 	partSystem.ParticleSetRotation(fire3, 0.0f, 360.0f, 60.0f);
 	partSystem.ParticleSetDirection(fire3, 270 + 32, 270 - 30);
 	partSystem.ParticleSetColor(fire3, PS::Color(0, 255, 255, 255), PS::Color(0, 0, 255, 0));
-	partSystem.ParticleSetLifetime(fire3, 1.0f, 3.0f);
+	partSystem.ParticleSetLifetime(fire3, 2.0f, 3.0f);
 
 	// Emitter #1
 	PS::Emitter fireplace3 = partSystem.CreateEmitter(fire3);
@@ -128,7 +128,7 @@ int main(int argc, const char* argv[])
 					sf::Vector2i mousePos = sf::Mouse::getPosition(window);
 					partSystem.SpawnParticle(fire2, PS::Vector2((float)mousePos.x, (float)mousePos.y), 5);
 
-					partSystem.DestroyParticle(fire2);
+					partSystem.DestroyParticle(fire);
 				}
 				if (event.mouseButton.button == sf::Mouse::Button::Right)
 				{
@@ -198,7 +198,7 @@ int main(int argc, const char* argv[])
 
 		for (unsigned i = 0; i < partSystem.GetDefinitionCount(); i++)
 		{
-			partCountLabel.setString(std::to_string(i) + ": " + std::to_string(partSystem.GetSpawnedParticleTypeCount(i)));
+			partCountLabel.setString(std::to_string(i) + ": " + std::to_string(partSystem.GetSpawnedParticleCountOfType(i)));
 			partCountLabel.setPosition(sf::Vector2f(32.0f, 96.0f + 32.0f*(float)i));
 
 			window.draw(partCountLabel);

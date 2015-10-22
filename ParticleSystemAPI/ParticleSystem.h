@@ -97,6 +97,7 @@ namespace PS
 	class ParticleSystem
 	{
 		friend class ParticleIterator;
+		friend class EmitterIterator;
 
 	public:
 
@@ -140,14 +141,12 @@ namespace PS
 				: scale(1.0f, 1.0f)
 				, rotation(0.0f)
 				, size(1.0f)
-			{
-				locationData = LocationData();
-				colorData = ColorData();
-			}
+				, locationData()
+				, colorData()
+			{}
 
 			~ParticleOutput()
-			{
-			}
+			{}
 
 		private:
 
@@ -259,6 +258,7 @@ namespace PS
 			ParticleOutput* particles;
 
 			unsigned numEmitters;
+
 			EmitterDef* emitters;
 		};
 
@@ -283,8 +283,6 @@ namespace PS
 
 			Vector2 location;
 			EmitterShape shape;
-			
-			//unsigned particle;
 
 			float frequency;
 			unsigned particleCount;
@@ -334,20 +332,20 @@ namespace PS
 		void ParticleSetCustomData(Particle& particle, void* data);
 
 		unsigned GetDefinitionCount();
-		unsigned GetSpawnedParticleTypeCount(unsigned particle);
-
+		unsigned GetSpawnedParticleCountOfType(unsigned particle);
 		unsigned GetSpawnedParticleCount();
-		ParticleOutput* GetParticle(unsigned ParticleIndex);
 
 	private:
 
 		ParticleDef* getDefinitionFromIndex(unsigned& index);
+		ParticleOutput* GetParticle(unsigned ParticleIndex);
 
 	private:
 
-		static const int MAX_PARTICLE_DEFS = 100;
-		static const int MAX_PARTICLES = 10000;
-		static const int MAX_EMITTERS = 100;
+		static const unsigned MAX_DEFINITIONS = 100;
+		static const unsigned MAX_PARTICLES = 10000;
+		static const unsigned MAX_EMITTERS = 100;
+
 		unsigned numDefinitions;
 		ParticleDef* particleDefinitions;
 		unsigned numParticles;
@@ -370,8 +368,6 @@ namespace PS
 
 	private:
 
-	private:
-
 		ParticleSystem* partSystem;
 
 		Output* target;
@@ -381,6 +377,33 @@ namespace PS
 		unsigned numParticlesInDef;
 		unsigned defIndex;
 		unsigned particleIndex;
+
+		bool reachedEnd;
+	};
+
+	class EmitterIterator
+	{
+	public:
+		EmitterIterator(class ParticleSystem& particleSystem);
+		EmitterIterator() = delete;
+
+		void operator++();
+		void operator++(int);
+		const Output& operator*() const;
+		const Output& operator->() const;
+		operator bool() const;
+
+	private:
+
+		ParticleSystem* partSystem;
+
+		Output* target;
+		ParticleSystem::ParticleDef* currentDef;
+
+		unsigned numDefinitions;
+		unsigned numEmittersInDef;
+		unsigned defIndex;
+		unsigned emitterIndex;
 
 		bool reachedEnd;
 	};
