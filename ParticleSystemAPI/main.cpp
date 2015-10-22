@@ -30,7 +30,6 @@ int main(int argc, const char* argv[])
 	// Create the main window
 	sf::RenderWindow window(sf::VideoMode(1280, 720), "ParticleSystemAPI - Demo");
 
-	// Load a sprite to display
 	// Start the game loop
 
 	std::cout << std::endl << "ParticleSystem size: " <<
@@ -64,9 +63,9 @@ int main(int argc, const char* argv[])
 	partSystem.EmitterSetFrequency(fireplace, 0.00001f, 5);
 
 	// Emitter #2
-	PS::Emitter constFire = partSystem.CreateEmitter(fire);
+	/*PS::Emitter constFire = partSystem.CreateEmitter(fire);
 	partSystem.EmitterSetCircle(constFire, PS::Vector2(64, 640), 16);
-	partSystem.EmitterSetFrequency(constFire, 0.00001f);
+	partSystem.EmitterSetFrequency(constFire, 0.00001f);*/
 	
 	// FIRE 2
 	/*-------------------------------------*/
@@ -129,7 +128,7 @@ int main(int argc, const char* argv[])
 					sf::Vector2i mousePos = sf::Mouse::getPosition(window);
 					partSystem.SpawnParticle(fire2, PS::Vector2((float)mousePos.x, (float)mousePos.y), 5);
 
-					//partSystem.DestroyParticle(fire);
+					partSystem.DestroyParticle(fire2);
 				}
 				if (event.mouseButton.button == sf::Mouse::Button::Right)
 				{

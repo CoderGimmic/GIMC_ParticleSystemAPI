@@ -387,7 +387,7 @@ namespace PS
 		emitters = nullptr;
 	}
 
-	void ParticleSystem::ParticleDef::Reset()
+	unsigned ParticleSystem::ParticleDef::Reset()
 	{
 		minLife = 1.f;
 		maxLife = 1.0f;
@@ -429,15 +429,22 @@ namespace PS
 		customData = nullptr;
 		flagBits = 0x0000;
 
+		unsigned ParticlesLeftBeforeReset = numParticles;
+
 		queueFront = (unsigned)-1;
 		queueRear = (unsigned)-1;
 		numParticles = 0;
 		numEmitters = 0;
+
+		return(ParticlesLeftBeforeReset);
 	}
 
 	int ParticleSystem::ParticleDef::ProcessAll(float deltaTime)
 	{
 		int Result = 0;
+
+		if (deltaTime == 0.0f)
+			return Result;
 
 		unsigned numSpawnedParticles = 0;
 		Vector2 spawnLocations[MAX_PARTICLES];
@@ -466,9 +473,10 @@ namespace PS
 		// Emitters
 		for (unsigned i = 0; i < numEmitters; i++)
 		{
-			if (emitters[i].Update(deltaTime))
+			unsigned framesPassed = emitters[i].Update(deltaTime);
+			if (framesPassed > 0)
 			{
-				unsigned particleCount = emitters[i].particleCount;
+				unsigned particleCount = emitters[i].particleCount * framesPassed;
 				for (unsigned j = 0; j < particleCount; j++)
 				{
 					spawnLocations[numSpawnedParticles++] = emitters[i].GetSpawnLocation();
@@ -741,16 +749,16 @@ namespace PS
 		shape = EmitterShape::POINT;
 	}
 
-	bool ParticleSystem::EmitterDef::Update(float deltaTime)
+	unsigned ParticleSystem::EmitterDef::Update(float deltaTime)
 	{
 		timer += deltaTime;
 		if (timer >= frequency)
 		{
 			timer = 0.0f;
-			return true;
+			return 1;
 		}
 
-		return false;
+		return 0;
 	}
 
 	Vector2 ParticleSystem::EmitterDef::GetSpawnLocation()
@@ -819,6 +827,7 @@ namespace PS
 	{
 		Particle handle;
 		handle.uniqueID = numDefinitions;
+		handle.valid = true;
 		numDefinitions++;
 		return handle;
 	}
@@ -828,14 +837,25 @@ namespace PS
 		Emitter handle;
 		handle.particleID = spawnedParticle.uniqueID;
 		handle.uniqueID = particleDefinitions[handle.particleID].numEmitters;
+		handle.valid = true;
 		particleDefinitions[handle.particleID].numEmitters++;
 
 		return handle;
 	}
 
-	void ParticleSystem::DestroyParticle(Particle particle)
+	void ParticleSystem::DestroyParticle(Particle& particle)
 	{
-		particleDefinitions[particle.uniqueID].Reset();
+		if (particle.valid == false)
+			return;
+
+		unsigned id = particle.uniqueID;
+		particle.valid = false;
+
+		numParticles -= particleDefinitions[id].Reset();
+
+		ParticleDef lastElement = particleDefinitions[numDefinitions];
+		particleDefinitions[numDefinitions] = particleDefinitions[id];
+		particleDefinitions[id] = lastElement;
 
 		numDefinitions--;
 	}
@@ -847,6 +867,9 @@ namespace PS
 
 	void ParticleSystem::SpawnParticle(Particle particle, Vector2 location, unsigned spawnCount)
 	{
+		if (particle.valid == false)
+			return;
+
 		for (unsigned i = 0; i < spawnCount; i++)
 		{
 			if (particleDefinitions[particle.uniqueID].addParticle(location))
@@ -900,8 +923,11 @@ namespace PS
 		def.particleCount = spawnCount;
 	}
 
-	void ParticleSystem::ParticleSetLifetime(Particle particle, float minLife, float maxLife)
+	void ParticleSystem::ParticleSetLifetime(Particle& particle, float minLife, float maxLife)
 	{
+		if (particle.valid == false)
+			return;
+
 		if (minLife == 0.0f && maxLife == 0.0f)
 			return;
 
@@ -910,8 +936,11 @@ namespace PS
 		def.maxLife = std::max(minLife, maxLife);
 	}
 
-	void ParticleSystem::ParticleSetSize(Particle particle, float sizeMin, float sizeMax, float sizeInc, float sizeWiggle)
+	void ParticleSystem::ParticleSetSize(Particle& particle, float sizeMin, float sizeMax, float sizeInc, float sizeWiggle)
 	{
+		if (particle.valid == false)
+			return;
+
 		ParticleDef& def = particleDefinitions[particle.uniqueID];
 		def.sizeMin = std::min(sizeMin, sizeMax);
 		def.sizeMax = std::max(sizeMin, sizeMax);
@@ -922,8 +951,11 @@ namespace PS
 			def.flagBits |= EParticleFlags::Flag_Size;
 	}
 
-	void ParticleSystem::ParticleSetRotation(Particle particle, float rotMin, float rotMax, float rotInc /*= 0.0f*/, float rotWiggle /*= 0.0f*/, bool rotRelative /*= false*/)
+	void ParticleSystem::ParticleSetRotation(Particle& particle, float rotMin, float rotMax, float rotInc /*= 0.0f*/, float rotWiggle /*= 0.0f*/, bool rotRelative /*= false*/)
 	{
+		if (particle.valid == false)
+			return;
+
 		ParticleDef& def = particleDefinitions[particle.uniqueID];
 		def.rotationMin = std::min(rotMin, rotMax);
 		def.rotationMax = std::max(rotMin, rotMax);
@@ -935,19 +967,28 @@ namespace PS
 			def.flagBits |= EParticleFlags::Flag_Rotation;
 	}
 
-	void ParticleSystem::ParticleSetScale(Particle particle, float scaleX, float scaleY)
+	void ParticleSystem::ParticleSetScale(Particle& particle, float scaleX, float scaleY)
 	{
+		if (particle.valid == false)
+			return;
+
 		ParticleDef& def = particleDefinitions[particle.uniqueID];
 		def.scale = Vector2(scaleX, scaleY);
 	}
 
-	void ParticleSystem::ParticleSetColor(Particle particle, Color color)
+	void ParticleSystem::ParticleSetColor(Particle& particle, Color color)
 	{
+		if (particle.valid == false)
+			return;
+
 		ParticleSetColor(particle, color, color);
 	}
 
-	void ParticleSystem::ParticleSetColor(Particle particle, Color colorStart, Color colorEnd)
+	void ParticleSystem::ParticleSetColor(Particle& particle, Color colorStart, Color colorEnd)
 	{
+		if (particle.valid == false)
+			return;
+
 		ParticleDef& def = particleDefinitions[particle.uniqueID];
 		def.colorStart = HSL(colorStart);
 		def.colorEnd = HSL(colorEnd);
@@ -973,10 +1014,17 @@ namespace PS
 
 			def.flagBits |= EParticleFlags::Flag_Color;
 		}
+		else
+		{
+			def.colorDeltaA = 0.f;
+		}
 	}
 
-	void ParticleSystem::ParticleSetDirection(Particle particle, float dirMin, float dirMax, float dirInc, float dirWiggle)
+	void ParticleSystem::ParticleSetDirection(Particle& particle, float dirMin, float dirMax, float dirInc, float dirWiggle)
 	{
+		if (particle.valid == false)
+			return;
+
 		ParticleDef& def = particleDefinitions[particle.uniqueID];
 		def.dirMin = std::min(dirMin, dirMax);
 		def.dirMax = std::max(dirMin, dirMax);
@@ -995,8 +1043,11 @@ namespace PS
 		}
 	}
 
-	void ParticleSystem::ParticleSetSpeed(Particle particle, float speedMin, float speedMax, float speedInc, float speedWiggle)
+	void ParticleSystem::ParticleSetSpeed(Particle& particle, float speedMin, float speedMax, float speedInc, float speedWiggle)
 	{
+		if (particle.valid == false)
+			return;
+
 		ParticleDef& def = particleDefinitions[particle.uniqueID];
 		def.speedMin = std::min(speedMin, speedMax);
 		def.speedMax = std::max(speedMin, speedMax);
@@ -1015,8 +1066,11 @@ namespace PS
 		}
 	}
 
-	void ParticleSystem::ParticleSetVelocity(Particle particle, Vector2 velocity)
+	void ParticleSystem::ParticleSetVelocity(Particle& particle, Vector2 velocity)
 	{
+		if (particle.valid == false)
+			return;
+
 		ParticleDef& def = particleDefinitions[particle.uniqueID];
 		def.Velocity = velocity;
 
@@ -1028,13 +1082,19 @@ namespace PS
 		}
 	}
 
-	void ParticleSystem::ParticleSetSpawnedParticle(Particle particle, Particle spawnedParticle)
+	void ParticleSystem::ParticleSetSpawnedParticle(Particle& particle, Particle spawnedParticle)
 	{
+		if (particle.valid == false)
+			return;
+
 		particleDefinitions[particle.uniqueID].particle = spawnedParticle.uniqueID;
 	}
 
-	void ParticleSystem::ParticleSetCustomData(Particle particle, void* data)
+	void ParticleSystem::ParticleSetCustomData(Particle& particle, void* data)
 	{
+		if (particle.valid == false)
+			return;
+
 		particleDefinitions[particle.uniqueID].customData = data;
 	}
 
@@ -1063,7 +1123,7 @@ namespace PS
 
 	// Private
 
-	ParticleSystem::ParticleDef* ParticleSystem::getDefenitionFromIndex(unsigned& index)
+	ParticleSystem::ParticleDef* ParticleSystem::getDefinitionFromIndex(unsigned& index)
 	{
 		if (numParticles == 0)
 			return nullptr;
@@ -1100,7 +1160,7 @@ namespace PS
 
 		if (reachedEnd == false)
 		{
-			currentDef = partSystem->getDefenitionFromIndex(defIndex);
+			currentDef = partSystem->getDefinitionFromIndex(defIndex);
 			if (currentDef != nullptr)
 			{
 				numParticlesInDef = currentDef->GetParticleCount();
@@ -1125,7 +1185,7 @@ namespace PS
 		else
 		{
 			defIndex++;
-			currentDef = partSystem->getDefenitionFromIndex(defIndex);
+			currentDef = partSystem->getDefinitionFromIndex(defIndex);
 			if (currentDef == nullptr)
 			{
 				reachedEnd = true;

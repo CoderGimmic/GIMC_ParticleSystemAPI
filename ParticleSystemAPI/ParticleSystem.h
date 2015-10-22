@@ -16,6 +16,8 @@ namespace PS
 		friend class ParticleSystem;
 	private:
 		unsigned uniqueID;
+
+		bool valid;
 	};
 
 	struct Emitter
@@ -24,6 +26,8 @@ namespace PS
 	private:
 		unsigned uniqueID;
 		unsigned particleID;
+
+		bool valid;
 	};
 
 	struct Vector2
@@ -185,7 +189,7 @@ namespace PS
 			ParticleDef();
 			~ParticleDef();
 
-			void Reset();
+			unsigned Reset();
 			int ProcessAll(float deltaTime);
 
 			unsigned GetParticleCount();
@@ -272,7 +276,7 @@ namespace PS
 			EmitterDef();
 
 			void Reset();
-			bool Update(float deltaTime);
+			unsigned Update(float deltaTime);
 			Vector2 GetSpawnLocation();
 
 		public:
@@ -304,7 +308,7 @@ namespace PS
 
 		Particle CreateParticle();
 		Emitter CreateEmitter(Particle spawnedParticle);
-		void DestroyParticle(Particle particle);
+		void DestroyParticle(Particle& particle);
 		void DestroyEmitter(Emitter emitter);
 
 		void SpawnParticle(Particle particle, Vector2 location, unsigned spawnCount = 1);
@@ -317,17 +321,17 @@ namespace PS
 		void EmitterSetRectangle(Emitter emitter, Vector2 location, Vector2 dimension);
 		void EmitterSetFrequency(Emitter emitter, float frequency, unsigned spawnCount = 1);
 
-		void ParticleSetLifetime(Particle particle, float minLife, float maxLife);
-		void ParticleSetSize(Particle particle, float sizeMin, float sizeMax, float sizeInc = 0.0f, float sizeWiggle = 0.0f);
-		void ParticleSetRotation(Particle particle, float rotMin, float rotMax, float rotInc = 0.0f, float rotWiggle = 0.0f, bool rotRelative = false);
-		void ParticleSetScale(Particle particle, float scaleX, float scaleY);
-		void ParticleSetColor(Particle particle, Color color);
-		void ParticleSetColor(Particle particle, Color colorStart, Color colorEnd);
-		void ParticleSetDirection(Particle particle, float dirMin, float dirMax, float dirInc = 0.0f, float dirWiggle = 0.0f);
-		void ParticleSetSpeed(Particle particle, float speedMin, float speedMax, float speedInc = 0.0f, float speedWiggle = 0.0f);
-		void ParticleSetVelocity(Particle particle, Vector2 velocity);
-		void ParticleSetSpawnedParticle(Particle particle, Particle spawnedParticle);
-		void ParticleSetCustomData(Particle particle, void* data);
+		void ParticleSetLifetime(Particle& particle, float minLife, float maxLife);
+		void ParticleSetSize(Particle& particle, float sizeMin, float sizeMax, float sizeInc = 0.0f, float sizeWiggle = 0.0f);
+		void ParticleSetRotation(Particle& particle, float rotMin, float rotMax, float rotInc = 0.0f, float rotWiggle = 0.0f, bool rotRelative = false);
+		void ParticleSetScale(Particle& particle, float scaleX, float scaleY);
+		void ParticleSetColor(Particle& particle, Color color);
+		void ParticleSetColor(Particle& particle, Color colorStart, Color colorEnd);
+		void ParticleSetDirection(Particle& particle, float dirMin, float dirMax, float dirInc = 0.0f, float dirWiggle = 0.0f);
+		void ParticleSetSpeed(Particle& particle, float speedMin, float speedMax, float speedInc = 0.0f, float speedWiggle = 0.0f);
+		void ParticleSetVelocity(Particle& particle, Vector2 velocity);
+		void ParticleSetSpawnedParticle(Particle& particle, Particle spawnedParticle);
+		void ParticleSetCustomData(Particle& particle, void* data);
 
 		unsigned GetDefinitionCount();
 		unsigned GetSpawnedParticleTypeCount(unsigned particle);
@@ -337,7 +341,7 @@ namespace PS
 
 	private:
 
-		ParticleDef* getDefenitionFromIndex(unsigned& index);
+		ParticleDef* getDefinitionFromIndex(unsigned& index);
 
 	private:
 
