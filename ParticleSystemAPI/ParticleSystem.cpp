@@ -368,10 +368,10 @@ namespace PS
 
 	ParticleSystem::ParticleDef::ParticleDef()
 	{
-		Reset();
-
 		particles = new ParticleOutput[MAX_PARTICLES];
-		emitters = new ParticleSystem::EmitterDef[MAX_EMITTERS];
+		emitters = new EmitterDef[MAX_EMITTERS];
+
+		Reset();
 	}
 
 	ParticleSystem::ParticleDef::~ParticleDef()
@@ -385,6 +385,16 @@ namespace PS
 
 	unsigned ParticleSystem::ParticleDef::Reset()
 	{
+		for (unsigned i = 0; i < MAX_PARTICLES; i++)
+		{
+			particles[i] = ParticleOutput();
+		}
+
+		for (unsigned i = 0; i < MAX_EMITTERS; i++)
+		{
+			emitters[i] = EmitterDef();
+		}
+
 		minLife = 1.f;
 		maxLife = 1.0f;
 
@@ -523,8 +533,14 @@ namespace PS
 			updateColor(output, deltaTime);
 
 		// Velocity
-		if (flagBits & EParticleFlags::Flag_Location)
+		if (flagBits & EParticleFlags::Flag_Velocity)
 		{
+			if (flagBits & EParticleFlags::Flag_ConstVelocity)
+			{
+				output.location += output.locationData.Velocity * deltaTime;
+				return;
+			}
+
 			bool shouldUpdateSpeed = 
 				((flagBits & EParticleFlags::Flag_Speed) ? true : false);
 			bool shouldUpdateDirection = 
@@ -540,13 +556,13 @@ namespace PS
 				currentDirection = locationData.direction();
 			}
 
-			// Speed
+			// Dynamic Speed
 			if (shouldUpdateSpeed) 
 			{
 				currentSpeed = updateSpeed(currentSpeed, deltaTime);
 			}
 
-			// Direction
+			// Dynamic Direction
 			if (shouldUpdateDirection)
 			{
 				currentDirection = updateDirection(currentDirection, deltaTime);
@@ -559,15 +575,22 @@ namespace PS
 				locationData.direction() = currentDirection;
 				output.locationData = locationData;
 
-				updateVelocity(currentSpeed, currentDirection);
+				float angle = currentDirection * degToRad;
+				Vector2 dir(cos(angle), sin(angle));
+
+				float hyp = sqrtf(dir.X*dir.X + dir.Y*dir.Y);
+				if (hyp > 0.0f)
+				{
+					dir.X /= hyp;
+					dir.X /= hyp;
+				}
+
+				Velocity.X = dir.X*currentSpeed;
+				Velocity.Y = dir.Y*currentSpeed;
 			}
 
 			// Location
 			output.location += Velocity * deltaTime;
-		}
-		else if (flagBits & EParticleFlags::Flag_ConstVel)
-		{
-			output.location += output.locationData.Velocity * deltaTime;
 		}
 		
 		// Rotation
@@ -637,18 +660,7 @@ namespace PS
 
 	void ParticleSystem::ParticleDef::updateVelocity(float currentSpeed, float currentDirection)
 	{
-		float angle = currentDirection * degToRad;
-		Vector2 dir(cos(angle), sin(angle));
-
-		float hyp = sqrtf(dir.X*dir.X + dir.Y*dir.Y);
-		if (hyp > 0.0f)
-		{
-			dir.X /= hyp;
-			dir.X /= hyp;
-		}
-
-		Velocity.X = dir.X*currentSpeed;
-		Velocity.Y = dir.Y*currentSpeed;
+		
 	}
 
 	void ParticleSystem::ParticleDef::updateRotation(ParticleOutput& output, float deltaTime)
@@ -702,8 +714,8 @@ namespace PS
 
 		output.customData = customData;
 
-		// Individual static velocity
-		if (flagBits & EParticleFlags::Flag_ConstVel)
+		// Constant velocity
+		if (flagBits & EParticleFlags::Flag_ConstVelocity)
 		{
 			output.locationData.Velocity = Velocity;
 			return;
@@ -721,7 +733,7 @@ namespace PS
 				updateVelocity(output.locationData.speed(), output.locationData.direction());
 				output.locationData.Velocity = Velocity;
 
-				flagBits |= EParticleFlags::Flag_ConstVel;
+				flagBits |= EParticleFlags::Flag_ConstVelocity;
 			}
 		}
 	}
@@ -823,6 +835,8 @@ namespace PS
 	{
 		Particle handle;
 		handle.uniqueID = numDefinitions;
+		particleDefinitions[numDefinitions].Reset();
+
 		handle.valid = true;
 		numDefinitions++;
 		return handle;
@@ -1053,12 +1067,12 @@ namespace PS
 		if (dirInc != 0.0f || dirWiggle != 0.0f)
 		{
 			def.flagBits |= EParticleFlags::Flag_Direction;
-			def.flagBits |= EParticleFlags::Flag_Location;
+			def.flagBits |= EParticleFlags::Flag_Velocity;
 		}
-		else if (def.dirMax != 0.0f && def.dirMin == def.dirMax)
+		else if (def.dirMax != 0.0f && def.dirMin == def.dirMax) // Constant
 		{
 			def.updateVelocity(def.speedMax, def.dirMax);
-			def.flagBits |= EParticleFlags::Flag_Location;
+			def.flagBits |= EParticleFlags::Flag_Velocity;
 		}
 	}
 
@@ -1076,12 +1090,12 @@ namespace PS
 		if (speedInc != 0.0f || speedWiggle != 0.0f)
 		{
 			def.flagBits |= EParticleFlags::Flag_Speed;
-			def.flagBits |= EParticleFlags::Flag_Location;
+			def.flagBits |= EParticleFlags::Flag_Velocity;
 		}
-		else if (def.speedMax != 0.0f && def.speedMin == def.speedMax)
+		else if (def.speedMax != 0.0f && def.speedMin == def.speedMax) // Constant
 		{
 			def.updateVelocity(def.speedMax, def.dirMax);
-			def.flagBits |= EParticleFlags::Flag_Location;
+			def.flagBits |= EParticleFlags::Flag_Velocity;
 		}
 	}
 
@@ -1095,7 +1109,8 @@ namespace PS
 
 		if (velocity != Vector2(0.0f, 0.0f))
 		{
-			def.flagBits |= EParticleFlags::Flag_Location;
+			def.flagBits |= EParticleFlags::Flag_ConstVelocity;
+			def.flagBits &= ~EParticleFlags::Flag_Velocity;
 			def.flagBits &= ~EParticleFlags::Flag_Speed;
 			def.flagBits &= ~EParticleFlags::Flag_Direction;
 		}
@@ -1117,7 +1132,7 @@ namespace PS
 		particleDefinitions[particle.uniqueID].customData = data;
 	}
 
-	unsigned ParticleSystem::GetDefinitionCount()
+	unsigned ParticleSystem::GetParticleTypeCount()
 	{
 		return numDefinitions;
 	}

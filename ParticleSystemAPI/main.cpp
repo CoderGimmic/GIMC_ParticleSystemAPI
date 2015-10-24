@@ -10,6 +10,8 @@
 #include "ParticleSystem.h"
 #include "SFML/Graphics/RectangleShape.hpp"
 
+#include "DebugGraph.h"
+
 #include <iostream>
 #include <string>
 
@@ -28,20 +30,27 @@ void updateDeltatime()
 int main(int argc, const char* argv[])
 {
 	// Create the main window
-	sf::RenderWindow window(sf::VideoMode(1280, 720), "ParticleSystemAPI - Demo");
-
-	// Start the game loop
-
-	std::cout << std::endl << "ParticleSystem size: " <<
-		sizeof(PS::ParticleSystem);
-
-	std::cout << std::endl;
-
-	/*system("pause");
-	return 0;*/
+	int width = 1280;
+	int height = 720;
+	sf::RenderWindow window(sf::VideoMode(width, height), "ParticleSystemAPI - Demo");
+	//window.setMouseCursorVisible(false);
+	//window.setFramerateLimit(60);
 
 	sf::Font fnt;
 	fnt.loadFromFile("../data/pixel.ttf");
+
+	sf::Font graphFont;
+	graphFont.loadFromFile("../data/courbd.ttf");
+
+	DebugGraph fpsGraph("FPS");
+	fpsGraph.setEntryCap(240);
+	fpsGraph.setWarningThreshold(55);
+	fpsGraph.toggle();
+
+#define ENABLE_FPSGRAPH 1
+#define DRAW_PARTICLE 1
+#define TEXT_PARTICLE 0
+#define UPDATE_PARTICLE 1
 
 	PS::ParticleSystem partSystem;
 	
@@ -60,7 +69,7 @@ int main(int argc, const char* argv[])
 	PS::Emitter fireplace = partSystem.CreateEmitter(fire);
 	partSystem.EmitterSetPoint(fireplace, PS::Vector2(256.f, 256.f));
 	partSystem.EmitterSetRectangle(fireplace, PS::Vector2(256, 256), PS::Vector2(256, 8));
-	partSystem.EmitterSetFrequency(fireplace, 0.551f, 5);
+	partSystem.EmitterSetFrequency(fireplace, 0.001f, 5);
 
 	// Emitter #2
 	PS::Emitter constFire = partSystem.CreateEmitter(fire);
@@ -96,11 +105,17 @@ int main(int argc, const char* argv[])
 	partSystem.EmitterSetPoint(fireplace3, PS::Vector2(1000.f, 640.f));
 	partSystem.EmitterSetFrequency(fireplace3, 0.05f);
 
+	float timer = 0;
+
 	while (window.isOpen())
 	{
 		updateDeltatime();
+		timer += deltaTime;
+		int fps = (int)(1.0f / deltaTime);
 
+#if UPDATE_PARTICLE
 		partSystem.Update(deltaTime);
+#endif
 
 		// Process events
 		sf::Event event;
@@ -140,32 +155,30 @@ int main(int argc, const char* argv[])
 		sf::Vector2i mousePos = sf::Mouse::getPosition(window);
 		partSystem.EmitterSetLocation(fireplace, PS::Vector2((float)mousePos.x, (float)mousePos.y));
 
-		//window.setMouseCursorVisible(false);
-
 		// Clear screen
 		window.clear();
 
-#define TEXT_PARTICLE 0
+#if DRAW_PARTICLE
 
-#if TEXT_PARTICLE
+	#if TEXT_PARTICLE
 		sf::Text textParticle;
 		textParticle.setFont(fnt);
 		textParticle.setStyle(sf::Text::Bold);
-#endif
+	#endif
 
 		// render particlesystem
 		for (PS::ParticleIterator it(partSystem); it; it++)
 		{
-			PS::Output particle = (*it);//partSystem.GetParticle(i);
+			PS::Output particle = (*it);
+
 			PS::Vector2 location = particle.location;
 			PS::Color color = particle.color;
 			float size = particle.size;
 			PS::Vector2 scale = particle.scale;
 			scale *= 2;
 			scale.Y = scale.X;
-			sf::RectangleShape shape;
 
-#if TEXT_PARTICLE
+	#if TEXT_PARTICLE
 
 			textParticle.setString("+");
 			textParticle.setPosition(location.X, location.Y);
@@ -174,7 +187,8 @@ int main(int argc, const char* argv[])
 			textParticle.setColor(sf::Color(color.R, color.G, color.B, color.A));
 
 			window.draw(textParticle);
-#else
+	#else
+			sf::RectangleShape shape;
 
 			shape.setPosition(location.X, location.Y);
 			shape.setRotation(particle.rotation);
@@ -184,36 +198,41 @@ int main(int argc, const char* argv[])
 			shape.setFillColor(sf::Color(color.R, color.G, color.B, color.A));
 
 			window.draw(shape);
+	#endif
+		}
+
 #endif
-		}
 
-		sf::Text partCountLabel;
-		partCountLabel.setStyle(sf::Text::Bold);
-		partCountLabel.setFont(fnt);
-		partCountLabel.setColor(sf::Color::White);
-		partCountLabel.setString("Particles: " + std::to_string(partSystem.GetSpawnedParticleCount()));
-		partCountLabel.setPosition(sf::Vector2f(32, 32));
+		sf::Text debugLabel;
+		debugLabel.setStyle(sf::Text::Bold);
+		debugLabel.setFont(fnt);
+		debugLabel.setColor(sf::Color::White);
+		debugLabel.setString("Particles: " + std::to_string(partSystem.GetSpawnedParticleCount()));
+		debugLabel.setPosition(sf::Vector2f(32, 32));
 
-		window.draw(partCountLabel);
+		window.draw(debugLabel);
 
-		for (unsigned i = 0; i < partSystem.GetDefinitionCount(); i++)
+		for (unsigned i = 0; i < partSystem.GetParticleTypeCount(); i++)
 		{
-			partCountLabel.setString(std::to_string(i) + ": " + std::to_string(partSystem.GetSpawnedParticleCountOfType(i)));
-			partCountLabel.setPosition(sf::Vector2f(32.0f, 96.0f + 32.0f*(float)i));
+			debugLabel.setString(std::to_string(i) + ": " + std::to_string(partSystem.GetSpawnedParticleCountOfType(i)));
+			debugLabel.setPosition(sf::Vector2f(32.0f, 96.0f + 32.0f*(float)i));
 
-			window.draw(partCountLabel);
+			window.draw(debugLabel);
 		}
 
-		// FPS COUNTER
-		int fps = (int)(1.0f / deltaTime);
-		partCountLabel.setStyle(sf::Text::Bold);
-		partCountLabel.setString(std::to_string(fps));
-		partCountLabel.setPosition(1280 - 96 + 2, 64 + 2);
-		partCountLabel.setColor(sf::Color::Black);
-		window.draw(partCountLabel);
-		partCountLabel.setColor(fps > 55 ? sf::Color::Green : sf::Color::Red);
-		partCountLabel.setPosition(1280 - 96, 64);
-		window.draw(partCountLabel);
+		debugLabel.setColor(sf::Color::Black);
+		debugLabel.setString(std::to_string(fps));
+		debugLabel.setPosition(sf::Vector2f(width - 64 + 2, 32));
+		window.draw(debugLabel);
+		debugLabel.setColor(fps > 55 ? sf::Color::Green : sf::Color::Red);
+		debugLabel.setPosition(sf::Vector2f(width - 64, 32));
+		window.draw(debugLabel);
+
+		// Fps graph
+#if ENABLE_FPSGRAPH
+		fpsGraph.update(fps);
+		fpsGraph.draw(&window, &graphFont, width, height);
+#endif
 
 		// Update the window
 		window.display();

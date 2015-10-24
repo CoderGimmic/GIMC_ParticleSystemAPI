@@ -24,9 +24,15 @@
     <ClCompile Include="ParticleSystem.cpp">
       <Filter>Source Files\ParticleSystem</Filter>
     </ClCompile>
+    <ClCompile Include="DebugGraph.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ParticleSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="DebugGraph.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

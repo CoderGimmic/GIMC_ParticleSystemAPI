@@ -160,22 +160,22 @@ namespace PS
 
 		enum EParticleFlags
 		{
-			Flag_Location	= 0x0001, // 1
-			Flag_Speed		= 0x0002, // 2
-			Flag_Direction	= 0x0004, // 3
-			Flag_ConstVel	= 0x0008, // 4
-			Flag_Size		= 0x0010, // 5
-			Flag_Rotation	= 000020, // 6
-			Flag_Color		= 0x0040, // 7
-			Flag_HSL		= 0x0080, // 8
-			Flag_Flag9		= 0x0100, // 9
-			Flag_Flag10		= 0x0200, // 10
-			Flag_Flag11		= 0x0400, // 11
-			Flag_Flag12		= 0x0800, // 12
-			Flag_Flag13		= 0x1000, // 13
-			Flag_Flag14		= 0x2000, // 14
-			Flag_Flag15		= 0x4000, // 15
-			Flag_Flag16		= 0x8000  // 16
+			Flag_Velocity		= 0x0001, // 1
+			Flag_Speed			= 0x0002, // 2
+			Flag_Direction		= 0x0004, // 3
+			Flag_ConstVelocity	= 0x0008, // 4
+			Flag_Size			= 0x0010, // 5
+			Flag_Rotation		= 000020, // 6
+			Flag_Color			= 0x0040, // 7
+			Flag_HSL			= 0x0080, // 8
+			Flag_Flag9			= 0x0100, // 9
+			Flag_Flag10			= 0x0200, // 10
+			Flag_Flag11			= 0x0400, // 11
+			Flag_Flag12			= 0x0800, // 12
+			Flag_Flag13			= 0x1000, // 13
+			Flag_Flag14			= 0x2000, // 14
+			Flag_Flag15			= 0x4000, // 15
+			Flag_Flag16			= 0x8000  // 16
 		};
 
 		class EmitterDef;
@@ -331,7 +331,7 @@ namespace PS
 		void ParticleSetSpawnedParticle(Particle& particle, Particle spawnedParticle);
 		void ParticleSetCustomData(Particle& particle, void* data);
 
-		unsigned GetDefinitionCount();
+		unsigned GetParticleTypeCount();
 		unsigned GetSpawnedParticleCountOfType(unsigned particle);
 		unsigned GetSpawnedParticleCount();
 
