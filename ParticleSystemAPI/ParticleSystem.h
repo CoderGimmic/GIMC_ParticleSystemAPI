@@ -260,6 +260,7 @@ namespace PS
 			unsigned numEmitters;
 
 			EmitterDef* emitters;
+			bool* emitterActive;
 		};
 
 		class EmitterDef
@@ -318,6 +319,7 @@ namespace PS
 		void EmitterSetCircle(Emitter emitter, Vector2 location, float radius);
 		void EmitterSetRectangle(Emitter emitter, Vector2 location, Vector2 dimension);
 		void EmitterSetFrequency(Emitter emitter, float frequency, unsigned spawnCount = 1);
+		void EmitterSetActive(Emitter emitter, bool state);
 
 		void ParticleSetLifetime(Particle& particle, float minLife, float maxLife);
 		void ParticleSetSize(Particle& particle, float sizeMin, float sizeMax, float sizeInc = 0.0f, float sizeWiggle = 0.0f);

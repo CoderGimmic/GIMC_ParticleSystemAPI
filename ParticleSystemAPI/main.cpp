@@ -62,14 +62,16 @@ int main(int argc, const char* argv[])
 	partSystem.ParticleSetRotation(fire, 0.0f, 360.0f, 0.0f, 0, false);
 	partSystem.ParticleSetSpeed(fire, 96, 128, 96);
 	partSystem.ParticleSetDirection(fire, 270 - 32, 270 + 32, 45);
-	partSystem.ParticleSetColor(fire, PS::Color(255, 255,0, 255), PS::Color(255,0,0,0));
+	partSystem.ParticleSetColor(fire, PS::Color(255, 0,255, 255), PS::Color(255,255,0,0));
 	partSystem.ParticleSetLifetime(fire, 2.0f, 2.0f);
 
 	// Emitter #1
 	PS::Emitter fireplace = partSystem.CreateEmitter(fire);
 	partSystem.EmitterSetPoint(fireplace, PS::Vector2(256.f, 256.f));
 	partSystem.EmitterSetRectangle(fireplace, PS::Vector2(256, 256), PS::Vector2(256, 8));
-	partSystem.EmitterSetFrequency(fireplace, 0.001f, 5);
+	partSystem.EmitterSetPoint(fireplace, PS::Vector2());
+	partSystem.EmitterSetFrequency(fireplace, 0.0001f, 5);
+	partSystem.EmitterSetActive(fireplace, false);
 
 	// Emitter #2
 	PS::Emitter constFire = partSystem.CreateEmitter(fire);
@@ -107,6 +109,10 @@ int main(int argc, const char* argv[])
 
 	float timer = 0;
 
+	bool emitterState = false;
+	bool LMB = false;
+	bool RMB = false;
+
 	while (window.isOpen())
 	{
 		updateDeltatime();
@@ -136,14 +142,18 @@ int main(int argc, const char* argv[])
 					break;
 				}
 			}
+			else if (event.type == sf::Event::MouseButtonPressed)
+			{
+				if (event.mouseButton.button == sf::Mouse::Button::Left)
+				{
+					LMB = true;
+				}
+			}
 			else if (event.type == sf::Event::MouseButtonReleased)
 			{
 				if (event.mouseButton.button == sf::Mouse::Button::Left)
 				{
-					sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-					partSystem.SpawnParticle(fire2, PS::Vector2((float)mousePos.x, (float)mousePos.y), 5);
-
-					partSystem.DestroyParticle(fire);
+					LMB = false;
 				}
 				if (event.mouseButton.button == sf::Mouse::Button::Right)
 				{
@@ -154,6 +164,8 @@ int main(int argc, const char* argv[])
 
 		sf::Vector2i mousePos = sf::Mouse::getPosition(window);
 		partSystem.EmitterSetLocation(fireplace, PS::Vector2((float)mousePos.x, (float)mousePos.y));
+
+		partSystem.EmitterSetActive(fireplace, LMB);
 
 		// Clear screen
 		window.clear();

@@ -186,9 +186,9 @@ namespace PS
 	HSL::HSL(const Color& C)
 	{
 		double R, G, B;
-		R = C.R / 255.0;
-		G = C.G / 255.0;
-		B = C.B / 255.0;
+		R = (float)C.R / 255.0;
+		G = (float)C.G / 255.0;
+		B = (float)C.B / 255.0;
 
 		double max, min, l, s = 0.f;
 
@@ -233,6 +233,8 @@ namespace PS
 		l *= 100;
 		Saturation = s;
 		Luminance = l;
+
+		if (Hue < 0) { Hue = 360 - abs(Hue); }
 	}
 
 	HSL::HSL(int H, int S, int L)
@@ -370,6 +372,7 @@ namespace PS
 	{
 		particles = new ParticleOutput[MAX_PARTICLES];
 		emitters = new EmitterDef[MAX_EMITTERS];
+		emitterActive = new bool[MAX_EMITTERS];
 
 		Reset();
 	}
@@ -381,6 +384,9 @@ namespace PS
 
 		delete[] emitters;
 		emitters = nullptr;
+
+		delete[] emitterActive;
+		emitterActive = nullptr;
 	}
 
 	unsigned ParticleSystem::ParticleDef::Reset()
@@ -393,6 +399,7 @@ namespace PS
 		for (unsigned i = 0; i < MAX_EMITTERS; i++)
 		{
 			emitters[i] = EmitterDef();
+			emitterActive[i] = true;
 		}
 
 		minLife = 1.f;
@@ -479,6 +486,9 @@ namespace PS
 		// Emitters
 		for (unsigned i = 0; i < numEmitters; i++)
 		{
+			if (emitterActive[i] == false)
+				continue;
+
 			unsigned framesPassed = emitters[i].Update(deltaTime);
 			if (framesPassed > 0)
 			{
@@ -626,8 +636,9 @@ namespace PS
 			colorS += colorDeltaS * deltaTime * data.deltaFactor;
 			colorL += colorDeltaL * deltaTime * data.deltaFactor;
 
-			if (colorH > 360.0f) colorH = 360.0f;
-			if (colorH < 0.0f)   colorH = 0.0f;
+			// Wrap & clamp values
+			if (colorH > 360.0f) colorH = 0.0f;
+			if (colorH < 0.0f)   colorH = 360.0f;
 			if (colorS > 100.0f) colorS = 100.0f;
 			if (colorS < 0.0f)   colorS = 0.0f;
 			if (colorL > 100.0f) colorL = 100.0f;
@@ -956,6 +967,13 @@ namespace PS
 		def.particleCount = spawnCount;
 	}
 
+	void ParticleSystem::EmitterSetActive(Emitter emitter, bool state)
+	{
+		ParticleDef& def = particleDefinitions[emitter.particleID];
+
+		def.emitterActive[emitter.uniqueID] = state;
+	}
+
 	void ParticleSystem::ParticleSetLifetime(Particle& particle, float minLife, float maxLife)
 	{
 		if (particle.valid == false)
@@ -1028,10 +1046,51 @@ namespace PS
 		def.colorStartAlpha = colorStart.A;
 		def.colorEndAlpha = colorEnd.A;
 
-		if (def.colorStart != def.colorEnd)
+#define DEBUG_COLOR 0
+
+#if DEBUG_COLOR
+
+		Color debugRGB = def.colorStart.TurnToRGB();
+
+		bool failed = false;
+
+		if (debugRGB.R != colorStart.R)
+		{
+			printf("Wrong R value, expected: %f got: %f \n", colorStart.R, debugRGB.R);
+			failed = true;
+		}
+
+		if (debugRGB.G != colorStart.G)
+		{
+			printf("Wrong G value, expected: %f got: %f \n", colorStart.G, debugRGB.G);
+			failed = true;
+		}
+
+		if (debugRGB.B != colorStart.B)
+		{
+			printf("Wrong B value, expected: %f got: %f \n", colorStart.B, debugRGB.B);
+			failed = true;
+		}
+
+		if (failed)
+		{
+			printf("ID: %i", particle.uniqueID);
+		}
+		
+#endif
+
+		if (def.colorStart != def.colorEnd) 
 		{
 			if (def.colorStart.Hue != def.colorEnd.Hue)
-				def.colorDeltaH = float(def.colorStart.Hue - def.colorEnd.Hue) * -1.0f;
+			{
+				float currentAngle = (float)def.colorStart.Hue;
+				float wantedAngle = (float)def.colorEnd.Hue;
+				float diff = fmod(fmod((wantedAngle - currentAngle), 360.0f) + 540.0f, 360.0f) - 180.0f;
+				def.colorDeltaH = diff;
+
+				//def.colorDeltaH = float(def.colorStart.Hue - def.colorEnd.Hue) * -1.0f;
+			}
+
 			if (def.colorStart.Saturation != def.colorEnd.Saturation)
 				def.colorDeltaS = float(def.colorStart.Saturation - def.colorEnd.Saturation) * -1.0f;
 			if (def.colorStart.Luminance != def.colorEnd.Luminance)
@@ -1043,7 +1102,7 @@ namespace PS
 		
 		if (colorStart.A != colorEnd.A)
 		{
-			def.colorDeltaA = float(def.colorStartAlpha - def.colorEndAlpha) * -1.0f;
+			def.colorDeltaA = (def.colorStartAlpha - def.colorEndAlpha) * -1.0f;
 
 			def.flagBits |= EParticleFlags::Flag_Color;
 		}
