@@ -17,6 +17,17 @@
 
 //#include <vld.h>
 
+// TODO
+/*---------
+- Memory management, wierd behavior on clear
+- spawnedParticleType for particle
+- Emitter validity (passing as reference)
+- particle updates on large timeframes (spawning multiple particles) substepping?
+- optimize ParticleIterator
+- EmitterIterator
+- Fastforward? needed or not?
+*/
+
 float deltaTime = 0.0f;
 sf::Clock deltaClock;
 
@@ -34,7 +45,7 @@ int main(int argc, const char* argv[])
 	int height = 720;
 	sf::RenderWindow window(sf::VideoMode(width, height), "ParticleSystemAPI - Demo");
 	//window.setMouseCursorVisible(false);
-	//window.setFramerateLimit(60);
+	window.setFramerateLimit(60);
 
 	sf::Font fnt;
 	fnt.loadFromFile("../data/pixel.ttf");
@@ -49,15 +60,16 @@ int main(int argc, const char* argv[])
 
 #define ENABLE_FPSGRAPH 1
 #define DRAW_PARTICLE 1
-#define TEXT_PARTICLE 0
+#define TEXT_PARTICLE 1
 #define UPDATE_PARTICLE 1
+#define BURST_TEST 0
 
 	PS::ParticleSystem partSystem;
 	
 	// FIRE
 	/*-------------------------------------*/
 	PS::Particle fire = partSystem.CreateParticle();
-	partSystem.ParticleSetSize(fire, 1, 1, 5);
+	partSystem.ParticleSetSize(fire, 1, 8, 5);
 	partSystem.ParticleSetScale(fire, 1.0f, 0.1f);
 	partSystem.ParticleSetRotation(fire, 0.0f, 360.0f, 0.0f, 0, false);
 	partSystem.ParticleSetSpeed(fire, 96, 128, 96);
@@ -71,7 +83,9 @@ int main(int argc, const char* argv[])
 	partSystem.EmitterSetRectangle(fireplace, PS::Vector2(256, 256), PS::Vector2(256, 8));
 	partSystem.EmitterSetPoint(fireplace, PS::Vector2());
 	partSystem.EmitterSetFrequency(fireplace, 0.0001f, 5);
+#if BURST_TEST 
 	partSystem.EmitterSetActive(fireplace, false);
+#endif
 
 	// Emitter #2
 	PS::Emitter constFire = partSystem.CreateEmitter(fire);
@@ -101,6 +115,7 @@ int main(int argc, const char* argv[])
 	partSystem.ParticleSetDirection(fire3, 270 + 32, 270 - 30);
 	partSystem.ParticleSetColor(fire3, PS::Color(0, 255, 255, 255), PS::Color(0, 0, 255, 0));
 	partSystem.ParticleSetLifetime(fire3, 2.0f, 3.0f);
+	//partSystem.ParticleSetSpawnedParticle(fire3, fire);
 
 	// Emitter #1
 	PS::Emitter fireplace3 = partSystem.CreateEmitter(fire3);
@@ -147,6 +162,14 @@ int main(int argc, const char* argv[])
 				if (event.mouseButton.button == sf::Mouse::Button::Left)
 				{
 					LMB = true;
+
+#if BURST_TEST
+					partSystem.EmitterBurst(fireplace);
+#endif
+				}
+				if (event.mouseButton.button == sf::Mouse::Button::Right)
+				{
+					RMB = true;
 				}
 			}
 			else if (event.type == sf::Event::MouseButtonReleased)
@@ -157,7 +180,10 @@ int main(int argc, const char* argv[])
 				}
 				if (event.mouseButton.button == sf::Mouse::Button::Right)
 				{
-					partSystem.ClearVisibleParticles();
+					//partSystem.ClearVisibleParticles();
+					partSystem.FastForward(0.25f);
+
+					RMB = false;
 				}
 			}
 		}
@@ -165,7 +191,9 @@ int main(int argc, const char* argv[])
 		sf::Vector2i mousePos = sf::Mouse::getPosition(window);
 		partSystem.EmitterSetLocation(fireplace, PS::Vector2((float)mousePos.x, (float)mousePos.y));
 
+#if !BURST_TEST
 		partSystem.EmitterSetActive(fireplace, LMB);
+#endif
 
 		// Clear screen
 		window.clear();
@@ -234,15 +262,15 @@ int main(int argc, const char* argv[])
 
 		debugLabel.setColor(sf::Color::Black);
 		debugLabel.setString(std::to_string(fps));
-		debugLabel.setPosition(sf::Vector2f(width - 64 + 2, 32));
+		debugLabel.setPosition(sf::Vector2f(width - 64.0f + 2.0f, 32.0f));
 		window.draw(debugLabel);
 		debugLabel.setColor(fps > 55 ? sf::Color::Green : sf::Color::Red);
-		debugLabel.setPosition(sf::Vector2f(width - 64, 32));
+		debugLabel.setPosition(sf::Vector2f(width - 64.0f, 32.0f));
 		window.draw(debugLabel);
 
 		// Fps graph
 #if ENABLE_FPSGRAPH
-		fpsGraph.update(fps);
+		fpsGraph.update((float)fps);
 		fpsGraph.draw(&window, &graphFont, width, height);
 #endif
 

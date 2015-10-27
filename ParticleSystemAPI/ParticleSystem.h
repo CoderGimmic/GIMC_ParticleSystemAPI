@@ -191,6 +191,9 @@ namespace PS
 			unsigned Reset();
 			int ProcessAll(float deltaTime);
 
+			unsigned Burst(unsigned emitterIndex);
+			void SpawnParticle(Vector2 location);
+
 			unsigned GetParticleCount();
 			ParticleOutput* GetParticle(unsigned particleindex);
 
@@ -256,9 +259,10 @@ namespace PS
 			unsigned numParticles;
 			unsigned queueFront, queueRear;
 			ParticleOutput* particles;
+			unsigned numSpawnedParticles;
+			Vector2* spawnedParticles;
 
 			unsigned numEmitters;
-
 			EmitterDef* emitters;
 			bool* emitterActive;
 		};
@@ -313,12 +317,16 @@ namespace PS
 		void SpawnParticle(Particle particle, Vector2 location, unsigned spawnCount = 1);
 
 		void ClearVisibleParticles();
+		void ClearVisibleParticlesOfType(Particle& particle);
+
+		void FastForward(float timeInSecond);
 
 		void EmitterSetLocation(Emitter emitter, Vector2 location);
 		void EmitterSetPoint(Emitter emitter, Vector2 location);
 		void EmitterSetCircle(Emitter emitter, Vector2 location, float radius);
 		void EmitterSetRectangle(Emitter emitter, Vector2 location, Vector2 dimension);
 		void EmitterSetFrequency(Emitter emitter, float frequency, unsigned spawnCount = 1);
+		void EmitterBurst(Emitter emitter);
 		void EmitterSetActive(Emitter emitter, bool state);
 
 		void ParticleSetLifetime(Particle& particle, float minLife, float maxLife);
