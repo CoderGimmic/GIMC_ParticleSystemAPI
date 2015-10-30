@@ -268,7 +268,7 @@ namespace PS
 			void updateColor(ParticleOutput& output, float deltaTime);
 			float updateSpeed(float currentSpeed, float deltaTime);
 			float updateDirection(float currentDirection, float deltaTime);
-			void updateVelocity(float currentSpeed, float currentDirection);
+			Vector2 updateVelocity(float currentSpeed, float currentDirection);
 			void updateRotation(ParticleOutput& output, float deltaTime);
 
 			bool addParticle(Vector2 location);

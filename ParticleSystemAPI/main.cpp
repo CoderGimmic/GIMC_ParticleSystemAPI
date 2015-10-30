@@ -73,7 +73,7 @@ int main(int argc, const char* argv[])
 	partSystem.ParticleSetSize(fire, 1, 8, 5);
 	partSystem.ParticleSetScale(fire, 1.0f, 0.1f);
 	partSystem.ParticleSetRotation(fire, 0.0f, 360.0f, 0.0f, 0, false);
-	partSystem.ParticleSetSpeed(fire, 96, 128/*, 96*/);
+	partSystem.ParticleSetSpeed(fire, 96, 128, 96);
 	partSystem.ParticleSetDirection(fire, 270 - 32, 270 + 32/*, 45*/);
 	partSystem.ParticleSetColor(fire, PS::Color(255, 0,255, 255), PS::Color(255,255,0,0));
 	partSystem.ParticleSetLifetime(fire, 2.0f, 2.0f);
