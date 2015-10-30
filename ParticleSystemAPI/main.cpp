@@ -26,7 +26,6 @@
 - particle updates on large timeframes (spawning multiple particles) substepping?
 - optimize ParticleIterator
 - EmitterIterator
-- Fastforward? needed or not?
 */
 
 float deltaTime = 0.0f;
@@ -61,7 +60,7 @@ int main(int argc, const char* argv[])
 
 #define ENABLE_FPSGRAPH 1
 #define DRAW_PARTICLE 1
-#define TEXT_PARTICLE 0
+#define TEXT_PARTICLE 1
 #define UPDATE_PARTICLE 1
 #define BURST_TEST 0
 
@@ -74,7 +73,7 @@ int main(int argc, const char* argv[])
 	partSystem.ParticleSetScale(fire, 1.0f, 0.1f);
 	partSystem.ParticleSetRotation(fire, 0.0f, 360.0f, 0.0f, 0, false);
 	partSystem.ParticleSetSpeed(fire, 96, 128, 96);
-	partSystem.ParticleSetDirection(fire, 270 - 32, 270 + 32/*, 45*/);
+	partSystem.ParticleSetDirection(fire, 270 - 32, 270 + 32, 90);
 	partSystem.ParticleSetColor(fire, PS::Color(255, 0,255, 255), PS::Color(255,255,0,0));
 	partSystem.ParticleSetLifetime(fire, 2.0f, 2.0f);
 

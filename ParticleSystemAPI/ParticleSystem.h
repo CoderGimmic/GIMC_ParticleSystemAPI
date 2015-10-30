@@ -223,6 +223,12 @@ namespace PS
 			unsigned GetParticleCount();
 			ParticleOutput* GetParticle(unsigned particleindex);
 
+			void AddFlag(EParticleFlags flag);
+			void RemoveFlag(EParticleFlags flag);
+			bool HasFlag(EParticleFlags flag);
+
+			void CalcNewVelocityData();
+
 		public:
 			
 			float minLife, maxLife;
