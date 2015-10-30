@@ -458,7 +458,7 @@ namespace PS
 		return(ParticlesLeftBeforeReset);
 	}
 
-	int ParticleSystem::ParticleDef::ProcessAll(float deltaTime)
+	int ParticleSystem::ParticleDef::ProcessAll(float deltaTime, SpawnedParticleContainer& container)
 	{
 		int Result = 0;
 
@@ -474,6 +474,8 @@ namespace PS
 			particles[i].lifeRemaining -= deltaTime;
 			if (particles[i].lifeRemaining <= 0.0f)
 			{
+				container.Add(particles[i].location);
+
 				removeParticle(i);
 				Result--;
 
@@ -496,15 +498,15 @@ namespace PS
 				unsigned particleCount = emitters[i].particleCount * framesPassed;
 				for (unsigned j = 0; j < particleCount; j++)
 				{
-					spawnLocations[numSpawnedParts++] = emitters[i].GetSpawnLocation();
-					//SpawnParticle(emitters[i].GetSpawnLocation());
+					//spawnLocations[numSpawnedParts++] = emitters[i].GetSpawnLocation();
+					SpawnParticle(emitters[i].GetSpawnLocation());
 				}
 			}
 		}
 
-		for (unsigned i = 0; i < numSpawnedParts; i++)
+		for (unsigned i = 0; i < numSpawnedParticles; i++)
 		{
-			if (addParticle(spawnLocations[i]))
+			if (addParticle(spawnedParticles[i]))
 			{
 				Result++;
 			}
@@ -513,6 +515,7 @@ namespace PS
 				break;
 			}
 		}
+		numSpawnedParticles = 0;
 
 #if 0
 		unsigned succesullySpawnedCount = 0;
@@ -644,18 +647,7 @@ namespace PS
 				locationData.direction() = currentDirection;
 				output.locationData = locationData;
 
-				float angle = currentDirection * degToRad;
-				Vector2 dir(cos(angle), sin(angle));
-
-				float hyp = sqrtf(dir.X*dir.X + dir.Y*dir.Y);
-				if (hyp > 0.0f)
-				{
-					dir.X /= hyp;
-					dir.X /= hyp;
-				}
-
-				Velocity.X = dir.X*currentSpeed;
-				Velocity.Y = dir.Y*currentSpeed;
+				updateVelocity(currentSpeed, currentDirection);
 			}
 
 			// Location
@@ -730,7 +722,18 @@ namespace PS
 
 	void ParticleSystem::ParticleDef::updateVelocity(float currentSpeed, float currentDirection)
 	{
-		
+		float angle = currentDirection * degToRad;
+		Vector2 dir(cos(angle), sin(angle));
+
+		float hyp = sqrtf(dir.X*dir.X + dir.Y*dir.Y);
+		if (hyp > 0.0f)
+		{
+			dir.X /= hyp;
+			dir.X /= hyp;
+		}
+
+		Velocity.X = dir.X*currentSpeed;
+		Velocity.Y = dir.Y*currentSpeed;
 	}
 
 	void ParticleSystem::ParticleDef::updateRotation(ParticleOutput& output, float deltaTime)
@@ -804,6 +807,7 @@ namespace PS
 				output.locationData.Velocity = Velocity;
 
 				flagBits |= EParticleFlags::Flag_ConstVelocity;
+				flagBits |= EParticleFlags::Flag_Velocity;
 			}
 		}
 	}
@@ -895,9 +899,20 @@ namespace PS
 
 	void ParticleSystem::Update(float deltaTime)
 	{
+		SpawnedParticleContainer spawnedParticles[MAX_DEFINITIONS];
+
 		for (unsigned i = 0; i < numDefinitions; i++)
 		{
-			numParticles += particleDefinitions[i].ProcessAll(deltaTime);
+			numParticles += particleDefinitions[i].ProcessAll(deltaTime, 
+				spawnedParticles[particleDefinitions[i].particle]);
+		}
+
+		for (unsigned def = 0; def < numDefinitions; def++)
+		{
+			for (unsigned i = 0; i < spawnedParticles[def].size; i++)
+			{
+				particleDefinitions[def].SpawnParticle(spawnedParticles[def].locations[i]);
+			}
 		}
 	}
 
@@ -986,14 +1001,6 @@ namespace PS
 		def.numParticles = 0;
 
 		numParticles -= partCount;
-	}
-
-	void ParticleSystem::FastForward(float timeInSecond)
-	{
-		for(unsigned i = 0; i < numDefinitions; i++)
-		{
-			particleDefinitions[i].ProcessAll(timeInSecond);
-		}
 	}
 
 	void ParticleSystem::EmitterSetLocation(Emitter emitter, Vector2 location)
@@ -1220,6 +1227,7 @@ namespace PS
 		{
 			def.updateVelocity(def.speedMax, def.dirMax);
 			def.flagBits |= EParticleFlags::Flag_Velocity;
+			def.flagBits |= EParticleFlags::Flag_GlobalVelocity;
 		}
 	}
 

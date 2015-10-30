@@ -20,6 +20,7 @@
 // TODO
 /*---------
 - Memory management, wierd behavior on clear
+- change array to queue
 - spawnedParticleType for particle
 - Emitter validity (passing as reference)
 - particle updates on large timeframes (spawning multiple particles) substepping?
@@ -60,7 +61,7 @@ int main(int argc, const char* argv[])
 
 #define ENABLE_FPSGRAPH 1
 #define DRAW_PARTICLE 1
-#define TEXT_PARTICLE 1
+#define TEXT_PARTICLE 0
 #define UPDATE_PARTICLE 1
 #define BURST_TEST 0
 
@@ -72,8 +73,8 @@ int main(int argc, const char* argv[])
 	partSystem.ParticleSetSize(fire, 1, 8, 5);
 	partSystem.ParticleSetScale(fire, 1.0f, 0.1f);
 	partSystem.ParticleSetRotation(fire, 0.0f, 360.0f, 0.0f, 0, false);
-	partSystem.ParticleSetSpeed(fire, 96, 128, 96);
-	partSystem.ParticleSetDirection(fire, 270 - 32, 270 + 32, 45);
+	partSystem.ParticleSetSpeed(fire, 96, 128/*, 96*/);
+	partSystem.ParticleSetDirection(fire, 270 - 32, 270 + 32/*, 45*/);
 	partSystem.ParticleSetColor(fire, PS::Color(255, 0,255, 255), PS::Color(255,255,0,0));
 	partSystem.ParticleSetLifetime(fire, 2.0f, 2.0f);
 
@@ -91,7 +92,7 @@ int main(int argc, const char* argv[])
 	PS::Emitter constFire = partSystem.CreateEmitter(fire);
 	partSystem.EmitterSetCircle(constFire, PS::Vector2(64, 640), 16);
 	partSystem.EmitterSetFrequency(constFire, 0.05001f);
-	
+#if 0
 	// FIRE 2
 	/*-------------------------------------*/
 	PS::Particle fire2 = partSystem.CreateParticle();
@@ -110,17 +111,18 @@ int main(int argc, const char* argv[])
 	/*-------------------------------------*/
 	PS::Particle fire3 = partSystem.CreateParticle();
 	partSystem.ParticleSetSize(fire3, 4, 16, 5);
-	partSystem.ParticleSetSpeed(fire3, 32, 128, 128);
+	partSystem.ParticleSetSpeed(fire3, 32, 128, 0);
 	partSystem.ParticleSetRotation(fire3, 0.0f, 360.0f, 60.0f);
 	partSystem.ParticleSetDirection(fire3, 270 + 32, 270 - 30);
 	partSystem.ParticleSetColor(fire3, PS::Color(0, 255, 255, 255), PS::Color(0, 0, 255, 0));
 	partSystem.ParticleSetLifetime(fire3, 2.0f, 3.0f);
-	//partSystem.ParticleSetSpawnedParticle(fire3, fire);
+	partSystem.ParticleSetSpawnedParticle(fire3, fire);
 
 	// Emitter #1
 	PS::Emitter fireplace3 = partSystem.CreateEmitter(fire3);
 	partSystem.EmitterSetPoint(fireplace3, PS::Vector2(1000.f, 640.f));
 	partSystem.EmitterSetFrequency(fireplace3, 0.05f);
+#endif
 
 	float timer = 0;
 
@@ -180,8 +182,7 @@ int main(int argc, const char* argv[])
 				}
 				if (event.mouseButton.button == sf::Mouse::Button::Right)
 				{
-					//partSystem.ClearVisibleParticles();
-					partSystem.FastForward(0.25f);
+					partSystem.ClearVisibleParticles();
 
 					RMB = false;
 				}

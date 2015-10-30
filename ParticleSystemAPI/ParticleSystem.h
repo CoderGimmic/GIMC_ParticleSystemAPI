@@ -96,10 +96,36 @@ namespace PS
 
 	class ParticleSystem
 	{
-		friend class ParticleIterator;
-		friend class EmitterIterator;
+		static const unsigned MAX_DEFINITIONS = 100;
+		static const unsigned MAX_PARTICLES = 10000;
+		static const unsigned MAX_EMITTERS = 100;
+
+		struct SpawnedParticleContainer
+		{
+			Vector2 locations[50];
+			unsigned size;
+
+			SpawnedParticleContainer::SpawnedParticleContainer()
+			{
+				size = 0;
+			}
+
+			bool Add(Vector2 location)
+			{
+				if (size >= MAX_PARTICLES)
+					return false;
+
+				locations[size] = location;
+				size++;
+
+				return true;
+			}
+		};
 
 	public:
+
+		friend class ParticleIterator;
+		friend class EmitterIterator;
 
 		struct ParticleOutput
 		{
@@ -168,7 +194,7 @@ namespace PS
 			Flag_Rotation		= 000020, // 6
 			Flag_Color			= 0x0040, // 7
 			Flag_HSL			= 0x0080, // 8
-			Flag_Flag9			= 0x0100, // 9
+			Flag_GlobalVelocity	= 0x0100, // 9
 			Flag_Flag10			= 0x0200, // 10
 			Flag_Flag11			= 0x0400, // 11
 			Flag_Flag12			= 0x0800, // 12
@@ -189,7 +215,7 @@ namespace PS
 			~ParticleDef();
 
 			unsigned Reset();
-			int ProcessAll(float deltaTime);
+			int ProcessAll(float deltaTime, SpawnedParticleContainer& container);
 
 			unsigned Burst(unsigned emitterIndex);
 			void SpawnParticle(Vector2 location);
@@ -319,8 +345,6 @@ namespace PS
 		void ClearVisibleParticles();
 		void ClearVisibleParticlesOfType(Particle& particle);
 
-		void FastForward(float timeInSecond);
-
 		void EmitterSetLocation(Emitter emitter, Vector2 location);
 		void EmitterSetPoint(Emitter emitter, Vector2 location);
 		void EmitterSetCircle(Emitter emitter, Vector2 location, float radius);
@@ -351,10 +375,6 @@ namespace PS
 		ParticleOutput* GetParticle(unsigned ParticleIndex);
 
 	private:
-
-		static const unsigned MAX_DEFINITIONS = 100;
-		static const unsigned MAX_PARTICLES = 10000;
-		static const unsigned MAX_EMITTERS = 100;
 
 		unsigned numDefinitions;
 		ParticleDef* particleDefinitions;
