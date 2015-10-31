@@ -66,6 +66,16 @@ namespace PS
 
 		unsigned char R, G, B, A;
 
+		static const Color Black;       ///< Black predefined color
+		static const Color White;       ///< White predefined color
+		static const Color Red;         ///< Red predefined color
+		static const Color Green;       ///< Green predefined color
+		static const Color Blue;        ///< Blue predefined color
+		static const Color Yellow;      ///< Yellow predefined color
+		static const Color Magenta;     ///< Magenta predefined color
+		static const Color Cyan;        ///< Cyan predefined color
+		static const Color Transparent; ///< Transparent (black) predefined color
+
 	private:
 
 		void clampColor();
@@ -94,6 +104,13 @@ namespace PS
 
 	};
 
+	enum class EmitterShape
+	{
+		POINT,
+		CIRCLE,
+		RECTANGLE,
+	};
+
 	class ParticleSystem
 	{
 		static const unsigned MAX_DEFINITIONS = 100;
@@ -120,12 +137,14 @@ namespace PS
 
 				return true;
 			}
+
 		};
 
 	public:
 
 		friend class ParticleIterator;
-		friend class EmitterIterator;
+		friend class EmitterDebugIterator;
+		friend class EmitterDebugOutput;
 
 		struct ParticleOutput
 		{
@@ -209,6 +228,7 @@ namespace PS
 		class ParticleDef
 		{
 			friend class ParticleSystem;
+
 		public:
 			
 			ParticleDef();
@@ -217,11 +237,13 @@ namespace PS
 			unsigned Reset();
 			int ProcessAll(float deltaTime, SpawnedParticleContainer& container);
 
-			unsigned Burst(unsigned emitterIndex);
+			unsigned Burst(unsigned emitterIndex, unsigned spawnedParticlesOverride = (unsigned)-1);
 			void SpawnParticle(Vector2 location);
 
 			unsigned GetParticleCount();
 			ParticleOutput* GetParticle(unsigned particleindex);
+			unsigned GetEmitterCount();
+			class EmitterDebugOutput GetEmitter(unsigned emitterIndex);
 
 			void AddFlag(EParticleFlags flag);
 			void RemoveFlag(EParticleFlags flag);
@@ -303,18 +325,12 @@ namespace PS
 		{
 		public:
 
-			enum class EmitterShape
-			{
-				POINT,
-				CIRCLE,
-				RECTANGLE,
-			};
-
 			EmitterDef();
 
 			void Reset();
 			unsigned Update(float deltaTime);
 			Vector2 GetSpawnLocation();
+			void InitTimer();
 
 		public:
 
@@ -325,7 +341,7 @@ namespace PS
 			unsigned particleCount;
 
 			Vector2 point;
-			Vector2 dims;
+			Vector2 dimension;
 
 		private:
 
@@ -353,10 +369,10 @@ namespace PS
 
 		void EmitterSetLocation(Emitter emitter, Vector2 location);
 		void EmitterSetPoint(Emitter emitter, Vector2 location);
-		void EmitterSetCircle(Emitter emitter, Vector2 location, float radius);
-		void EmitterSetRectangle(Emitter emitter, Vector2 location, Vector2 dimension);
-		void EmitterSetFrequency(Emitter emitter, float frequency, unsigned spawnCount = 1);
-		void EmitterBurst(Emitter emitter);
+		void EmitterSetCircle(Emitter emitter, float radius, Vector2 location);
+		void EmitterSetRectangle(Emitter emitter, Vector2 dimension, Vector2 location);
+		void EmitterSetFrequency(Emitter emitter, float frequency, unsigned spawnCount = 1, bool spawnImmediately = false);
+		void EmitterBurst(Emitter emitter, unsigned spawnedParticlesOverride = (unsigned)-1);
 		void EmitterSetActive(Emitter emitter, bool state);
 
 		void ParticleSetLifetime(Particle& particle, float minLife, float maxLife);
@@ -375,9 +391,13 @@ namespace PS
 		unsigned GetSpawnedParticleCountOfType(unsigned particle);
 		unsigned GetSpawnedParticleCount();
 
+		unsigned GetEmitterTypeCount(unsigned particle);
+		unsigned GetEmitterCount();
+
 	private:
 
-		ParticleDef* getDefinitionFromIndex(unsigned& index);
+		ParticleDef* getDefinitionFromIndexParticles(unsigned& index);
+		ParticleDef* getDefenitionFromIndexEmitters(unsigned& index);
 		ParticleOutput* GetParticle(unsigned ParticleIndex);
 
 	private:
@@ -385,6 +405,8 @@ namespace PS
 		unsigned numDefinitions;
 		ParticleDef* particleDefinitions;
 		unsigned numParticles;
+
+		unsigned numEmitters;
 	};
 
 	typedef ParticleSystem::ParticleOutput Output;
@@ -417,29 +439,49 @@ namespace PS
 		bool reachedEnd;
 	};
 
-	class EmitterIterator
+	class EmitterDebugOutput
 	{
 	public:
-		EmitterIterator(class ParticleSystem& particleSystem);
-		EmitterIterator() = delete;
+		friend class ParticleSystem::ParticleDef;
+
+		Vector2 GetLocation() { return location; };
+		EmitterShape GetShape() { return shape; };
+		Vector2 GetRectangleDimension() { return dims; };
+		float GetCircleRadius() { return dims.X; };
+
+	private:
+		Vector2 location;
+		Vector2 dims;
+		EmitterShape shape;
+	};
+
+	class EmitterDebugIterator
+	{
+	public:
+		EmitterDebugIterator(class ParticleSystem& particleSystem);
+		EmitterDebugIterator() = delete;
+
+		unsigned CurrentIndex();
 
 		void operator++();
 		void operator++(int);
-		const Output& operator*() const;
-		const Output& operator->() const;
+		const EmitterDebugOutput operator*() const;
+		const EmitterDebugOutput operator->() const;
 		operator bool() const;
 
 	private:
 
 		ParticleSystem* partSystem;
 
-		Output* target;
+		EmitterDebugOutput target;
 		ParticleSystem::ParticleDef* currentDef;
 
 		unsigned numDefinitions;
 		unsigned numEmittersInDef;
 		unsigned defIndex;
 		unsigned emitterIndex;
+
+		unsigned indexCounter;
 
 		bool reachedEnd;
 	};

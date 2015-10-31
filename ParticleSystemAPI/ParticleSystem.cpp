@@ -5,11 +5,8 @@
 #include <cmath>
 #include <algorithm>
 #include <random>
-#include <ctime>
 
-#include <stdlib.h>
-
-#if 0
+#if 0 // InspectBinary
 #include <bitset>
 #include <string>
 
@@ -125,6 +122,16 @@ namespace PS
 	/////////////////////////////////////////////////////////////////////
 	// Color
 	/////////////////////////////////////////////////////////////////////
+
+	const Color Color::Black(0, 0, 0);
+	const Color Color::White(255, 255, 255);
+	const Color Color::Red(255, 0, 0);
+	const Color Color::Green(0, 255, 0);
+	const Color Color::Blue(0, 0, 255);
+	const Color Color::Yellow(255, 255, 0);
+	const Color Color::Magenta(255, 0, 255);
+	const Color Color::Cyan(0, 255, 255);
+	const Color Color::Transparent(0, 0, 0, 0);
 
 	Color::Color()
 		: R(255)
@@ -537,7 +544,7 @@ namespace PS
 		return Result;
 	}
 
-	unsigned ParticleSystem::ParticleDef::Burst(unsigned emitterIndex)
+	unsigned ParticleSystem::ParticleDef::Burst(unsigned emitterIndex, unsigned spawnedParticlesOverride)
 	{
 		/*if (emitterActive[emitterIndex] == false)
 			return;*/
@@ -547,7 +554,9 @@ namespace PS
 		unsigned numSpawnedBurstParts = 0;
 		Vector2 numBursted[ParticleSystem::MAX_PARTICLES];
 
-		unsigned particleCount = emitters[emitterIndex].particleCount;
+		unsigned particleCount = 
+			spawnedParticlesOverride == (unsigned)-1 ? emitters[emitterIndex].particleCount
+			: spawnedParticlesOverride;
 		for (unsigned j = 0; j < particleCount; j++)
 		{
 			numBursted[numSpawnedBurstParts++] = emitters[emitterIndex].GetSpawnLocation();
@@ -588,6 +597,21 @@ namespace PS
 			return &particles[0];
 
 		return &particles[particleIndex];
+	}
+
+	unsigned ParticleSystem::ParticleDef::GetEmitterCount()
+	{
+		return numEmitters;
+	}
+
+	EmitterDebugOutput ParticleSystem::ParticleDef::GetEmitter(unsigned emitterIndex)
+	{
+		EmitterDef* emitter = &emitters[emitterIndex];
+		EmitterDebugOutput output;
+		output.location = emitter->location;
+		output.dims = emitter->dimension;
+		output.shape = emitter->shape;
+		return output;
 	}
 
 	void ParticleSystem::ParticleDef::AddFlag(EParticleFlags flag)
@@ -738,6 +762,12 @@ namespace PS
 	float ParticleSystem::ParticleDef::updateSize(float currentSize, float deltaTime)
 	{
 		float Result = currentSize + sizeInc*deltaTime;
+
+		if (Result < 0.0f)
+		{
+			Result = 0.0f;
+		}
+
 		return(Result);
 	}
 
@@ -860,6 +890,7 @@ namespace PS
 		output.colorData.Set(colorStart, colorStartAlpha);
 		output.colorData.deltaFactor = (1.0f / output.lifeRemaining);
 		output.color = colorStart.TurnToRGB();
+		output.color.A = (unsigned char)colorStartAlpha;
 
 		output.customData = customData;
 
@@ -897,6 +928,7 @@ namespace PS
 		frequency = 1.0f;
 		particleCount = 1;
 		shape = EmitterShape::POINT;
+		location = Vector2(64, 64);
 	}
 
 	unsigned ParticleSystem::EmitterDef::Update(float deltaTime)
@@ -925,7 +957,7 @@ namespace PS
 				Vector2 Location;
 
 				float angle = Random::betweenf(0.f, PI_2);
-				float radius = Random::betweenf(0.0f, dims.X);
+				float radius = Random::betweenf(0.0f, dimension.X);
 
 				Location.X = location.X + radius * cos(angle);
 				Location.Y = location.Y + radius * sin(angle);
@@ -936,13 +968,18 @@ namespace PS
 			case EmitterShape::RECTANGLE:
 			{
 				return location +
-					Vector2(dims.X*-1.0f + Random::random(dims.X*2.0f),
-							dims.Y*-1.0f + Random::random(dims.Y*2.0f));
+					Vector2((dimension.X*-1.0f)*0.5f + Random::random(dimension.X),
+							(dimension.Y*-1.0f)*0.5f + Random::random(dimension.Y));
 			}
 			break;
 		}
 
 		return Vector2();
+	}
+
+	void ParticleSystem::EmitterDef::InitTimer()
+	{
+		timer = frequency;
 	}
 
 	/////////////////////////////////////////////////////////////////////
@@ -957,6 +994,7 @@ namespace PS
 		particleDefinitions = new ParticleDef[MAX_DEFINITIONS];
 
 		numParticles = 0;
+		numEmitters = 0;
 	}
 
 	ParticleSystem::~ParticleSystem()
@@ -1007,6 +1045,8 @@ namespace PS
 			handle.uniqueID = currentEmitterCount;
 			particleDefinitions[handle.particleID].emitterActive[handle.uniqueID] = true;
 			particleDefinitions[handle.particleID].numEmitters++;
+
+			numEmitters++;
 		}
 
 		return handle;
@@ -1037,6 +1077,8 @@ namespace PS
 		emitter.valid = false;
 		particleDefinitions[emitter.particleID].emitters[emitter.uniqueID].Reset();
 		particleDefinitions[emitter.particleID].emitterActive[emitter.uniqueID] = false;
+
+		numEmitters--;
 	}
 
 	void ParticleSystem::SpawnParticle(Particle particle, Vector2 location, unsigned spawnCount)
@@ -1086,34 +1128,34 @@ namespace PS
 			return;
 
 		EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
-		def.shape = EmitterDef::EmitterShape::POINT;
+		def.shape = EmitterShape::POINT;
 		def.location = location;
 	}
 
-	void ParticleSystem::EmitterSetCircle(Emitter emitter, Vector2 location, float radius)
+	void ParticleSystem::EmitterSetCircle(Emitter emitter, float radius, Vector2 location)
 	{
 		if (emitter.valid == false)
 			return;
 
 		EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
-		def.shape = EmitterDef::EmitterShape::CIRCLE;
+		def.shape = EmitterShape::CIRCLE;
 		def.location = location;
-		def.dims = Vector2(radius, radius);
+		def.dimension = Vector2(radius, radius);
 	}
 
-	void ParticleSystem::EmitterSetRectangle(Emitter emitter, Vector2 location, Vector2 dimension)
+	void ParticleSystem::EmitterSetRectangle(Emitter emitter, Vector2 dimension, Vector2 location)
 	{
 		if (emitter.valid == false)
 			return;
 
 		EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
 
-		def.shape = EmitterDef::EmitterShape::RECTANGLE;
+		def.shape = EmitterShape::RECTANGLE;
 		def.location = location;
-		def.dims = dimension;
+		def.dimension = dimension;
 	}
 
-	void ParticleSystem::EmitterSetFrequency(Emitter emitter, float frequency, unsigned spawnCount)
+	void ParticleSystem::EmitterSetFrequency(Emitter emitter, float frequency, unsigned spawnCount, bool spawnImmediately)
 	{
 		if (emitter.valid == false)
 			return;
@@ -1121,14 +1163,19 @@ namespace PS
 		EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
 		def.frequency = frequency;
 		def.particleCount = spawnCount;
+		if (spawnImmediately)
+		{
+			def.InitTimer();
+		}
 	}
 
-	void ParticleSystem::EmitterBurst(Emitter emitter)
+	void ParticleSystem::EmitterBurst(Emitter emitter, unsigned spawnedParticlesOverride)
 	{
 		if (emitter.valid == false)
 			return;
 
-		numParticles += particleDefinitions[emitter.particleID].Burst(emitter.uniqueID);
+		numParticles += particleDefinitions[emitter.particleID].Burst
+			(emitter.uniqueID,spawnedParticlesOverride);
 	}
 
 	void ParticleSystem::EmitterSetActive(Emitter emitter, bool state)
@@ -1211,8 +1258,8 @@ namespace PS
 		ParticleDef& def = particleDefinitions[particle.uniqueID];
 		def.colorStart = HSL(colorStart);
 		def.colorEnd = HSL(colorEnd);
-		def.colorStartAlpha = colorStart.A;
-		def.colorEndAlpha = colorEnd.A;
+		def.colorStartAlpha = (float)colorStart.A;
+		def.colorEndAlpha = (float)colorEnd.A;
 
 		if (def.colorStart != def.colorEnd) 
 		{
@@ -1366,17 +1413,19 @@ namespace PS
 		return numParticles;
 	}
 
-	ParticleSystem::ParticleOutput* ParticleSystem::GetParticle(unsigned particleIndex)
+	unsigned ParticleSystem::GetEmitterTypeCount(unsigned particle)
 	{
-		if (particleIndex > particleDefinitions[0].numParticles)
-			return &particleDefinitions[0].particles[particleDefinitions[0].numParticles];
+		return particleDefinitions[particle].numEmitters;
+	}
 
-		return &particleDefinitions[0].particles[particleIndex];
+	unsigned ParticleSystem::GetEmitterCount()
+	{
+		return numEmitters;
 	}
 
 	// Private
 
-	ParticleSystem::ParticleDef* ParticleSystem::getDefinitionFromIndex(unsigned& index)
+	ParticleSystem::ParticleDef* ParticleSystem::getDefinitionFromIndexParticles(unsigned& index)
 	{
 		if (numParticles == 0)
 			return nullptr;
@@ -1391,6 +1440,28 @@ namespace PS
 		}
 
 		return nullptr;
+	}
+
+	ParticleSystem::ParticleDef* ParticleSystem::getDefenitionFromIndexEmitters(unsigned& index)
+	{
+		for (unsigned i = index; i < numDefinitions; i++)
+		{
+			if (particleDefinitions[i].numEmitters > 0)
+			{
+				index = i;
+				return &particleDefinitions[i];
+			}
+		}
+
+		return nullptr;
+	}
+
+	ParticleSystem::ParticleOutput* ParticleSystem::GetParticle(unsigned particleIndex)
+	{
+		if (particleIndex > particleDefinitions[0].numParticles)
+			return &particleDefinitions[0].particles[particleDefinitions[0].numParticles];
+
+		return &particleDefinitions[0].particles[particleIndex];
 	}
 
 	/////////////////////////////////////////////////////////////////////
@@ -1413,10 +1484,10 @@ namespace PS
 
 		if (reachedEnd == false)
 		{
-			currentDef = partSystem->getDefinitionFromIndex(defIndex);
+			currentDef = partSystem->getDefinitionFromIndexParticles(defIndex);
 			if (currentDef != nullptr)
 			{
-				numParticlesInDef = currentDef->GetParticleCount();
+				numParticlesInDef = currentDef->GetParticleCount() - 1;
 				target = currentDef->GetParticle(particleIndex);
 			}
 			else
@@ -1438,7 +1509,7 @@ namespace PS
 		else
 		{
 			defIndex++;
-			currentDef = partSystem->getDefinitionFromIndex(defIndex);
+			currentDef = partSystem->getDefinitionFromIndexParticles(defIndex);
 			if (currentDef == nullptr)
 			{
 				reachedEnd = true;
@@ -1448,7 +1519,7 @@ namespace PS
 			else
 			{
 				particleIndex = 0;
-				numParticlesInDef = currentDef->GetParticleCount();
+				numParticlesInDef = currentDef->GetParticleCount() - 1;
 				target = currentDef->GetParticle(particleIndex);
 
 				return;
@@ -1477,10 +1548,10 @@ namespace PS
 	}
 
 	/////////////////////////////////////////////////////////////////////
-	// EmitterIterator
+	// EmitterDebugIterator
 	/////////////////////////////////////////////////////////////////////
 
-	EmitterIterator::EmitterIterator(class ParticleSystem& particleSystem)
+	EmitterDebugIterator::EmitterDebugIterator(class ParticleSystem& particleSystem)
 	{
 		partSystem = &particleSystem;
 
@@ -1489,18 +1560,20 @@ namespace PS
 		numEmittersInDef = 0;
 		emitterIndex = 0;
 
-		target = nullptr;
+		indexCounter = 0;
+
+		//target = nullptr;
 		currentDef = nullptr;
 
-		reachedEnd = partSystem->GetSpawnedParticleCount() == 0 ? true : false;
+		reachedEnd = false; //partSystem->GetSpawnedParticleCount() == 0 ? true : false;
 
 		if (reachedEnd == false)
 		{
-			currentDef = partSystem->getDefinitionFromIndex(defIndex);
+			currentDef = partSystem->getDefenitionFromIndexEmitters(defIndex);
 			if (currentDef != nullptr)
 			{
-				numEmittersInDef = currentDef->GetParticleCount();
-				target = currentDef->GetParticle(emitterIndex);
+				numEmittersInDef = currentDef->GetEmitterCount() - 1;
+				target = currentDef->GetEmitter(emitterIndex);
 			}
 			else
 			{
@@ -1509,19 +1582,25 @@ namespace PS
 		}
 	}
 
-	void EmitterIterator::operator++()
+	unsigned EmitterDebugIterator::CurrentIndex()
 	{
+		return indexCounter;
+	}
+
+	void EmitterDebugIterator::operator++()
+	{
+		indexCounter++;
 		if (emitterIndex < numEmittersInDef)
 		{
 			emitterIndex++;
-			target = currentDef->GetParticle(emitterIndex);
+			target = currentDef->GetEmitter(emitterIndex);
 
 			return;
 		}
 		else
 		{
 			defIndex++;
-			currentDef = partSystem->getDefinitionFromIndex(defIndex);
+			currentDef = partSystem->getDefenitionFromIndexEmitters(defIndex);
 			if (currentDef == nullptr)
 			{
 				reachedEnd = true;
@@ -1531,30 +1610,30 @@ namespace PS
 			else
 			{
 				emitterIndex = 0;
-				numEmittersInDef = currentDef->GetParticleCount();
-				target = currentDef->GetParticle(emitterIndex);
+				numEmittersInDef = currentDef->GetEmitterCount() - 1;
+				target = currentDef->GetEmitter(emitterIndex);
 
 				return;
 			}
 		}
 	}
 
-	void EmitterIterator::operator++(int)
+	void EmitterDebugIterator::operator++(int)
 	{
 		++(*this);
 	}
 
-	const Output& EmitterIterator::operator*() const
+	const EmitterDebugOutput EmitterDebugIterator::operator*() const
 	{
-		return *target;
+		return target;
 	}
 
-	const Output& EmitterIterator::operator->() const
+	const EmitterDebugOutput EmitterDebugIterator::operator->() const
 	{
-		return *target;
+		return target;
 	}
 
-	EmitterIterator::operator bool() const
+	EmitterDebugIterator::operator bool() const
 	{
 		return !reachedEnd;
 	}

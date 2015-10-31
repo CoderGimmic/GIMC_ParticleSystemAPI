@@ -9,6 +9,7 @@
 
 #include "ParticleSystem.h"
 #include "SFML/Graphics/RectangleShape.hpp"
+#include "SFML/Graphics/CircleShape.hpp"
 
 #include "DebugGraph.h"
 
@@ -19,13 +20,9 @@
 
 // TODO
 /*---------
-- Memory management, wierd behavior on clear
 - change array to queue
-- spawnedParticleType for particle
 - Emitter validity (passing as reference)
 - particle updates on large timeframes (spawning multiple particles) substepping?
-- optimize ParticleIterator
-- EmitterIterator
 */
 
 float deltaTime = 0.0f;
@@ -38,12 +35,19 @@ void updateDeltatime()
 	deltaTime = deltaClock.restart().asSeconds();
 }
 
+sf::Vector2f GetMousePosition(sf::RenderWindow* window, sf::Vector2f mousePos)
+{
+	window->setView(window->getDefaultView());
+	return window->mapPixelToCoords(sf::Vector2i((int)mousePos.x, (int)mousePos.y));
+}
+
 int main(int argc, const char* argv[])
 {
 	// Create the main window
 	int width = 1280;
 	int height = 720;
-	sf::RenderWindow window(sf::VideoMode(width, height), "ParticleSystemAPI - Demo");
+	sf::RenderWindow window(
+		sf::VideoMode(width, height), "ParticleSystemAPI - Demo");
 	//window.setMouseCursorVisible(false);
 	window.setFramerateLimit(60);
 
@@ -58,30 +62,38 @@ int main(int argc, const char* argv[])
 	fpsGraph.setWarningThreshold(55);
 	fpsGraph.toggle();
 
-#define ENABLE_FPSGRAPH 1
+	DebugGraph deltaGraph("DeltaTime");
+	deltaGraph.setEntryCap(240);
+	//deltaGraph.setWarningThreshold(0.018f);
+	deltaGraph.toggle();
+	deltaGraph.setPosition(0.5f, 1.0f);
+
 #define DRAW_PARTICLE 1
-#define TEXT_PARTICLE 1
+#define TEXT_PARTICLE 0
 #define UPDATE_PARTICLE 1
 #define BURST_TEST 0
+#define SPARK_PARTICLE 0
+#define DRAW_ADD 0
 
 	PS::ParticleSystem partSystem;
 	
 	// FIRE
 	/*-------------------------------------*/
 	PS::Particle fire = partSystem.CreateParticle();
-	partSystem.ParticleSetSize(fire, 1, 8, 5);
-	partSystem.ParticleSetScale(fire, 1.0f, 0.1f);
-	partSystem.ParticleSetRotation(fire, 0.0f, 360.0f, 0.0f, 0, false);
-	partSystem.ParticleSetSpeed(fire, 96, 128, 96);
+	partSystem.ParticleSetSize(fire, 2, 16, -10);
+	//partSystem.ParticleSetScale(fire, 1.0f, 0.1f);
+	partSystem.ParticleSetRotation(fire, 0.0f, 360.0f, 0.0f, 0, true);
+	partSystem.ParticleSetSpeed(fire, 96, 128, 512);
 	partSystem.ParticleSetDirection(fire, 270 - 32, 270 + 32, 90);
-	partSystem.ParticleSetColor(fire, PS::Color(255, 0,255, 255), PS::Color(255,255,0,0));
+	partSystem.ParticleSetColor(fire, PS::Color(255, 255,0, 255), PS::Color(255,0,0,0));
 	partSystem.ParticleSetLifetime(fire, 2.0f, 2.0f);
 
 	// Emitter #1
 	PS::Emitter fireplace = partSystem.CreateEmitter(fire);
 	partSystem.EmitterSetPoint(fireplace, PS::Vector2(256.f, 256.f));
-	partSystem.EmitterSetRectangle(fireplace, PS::Vector2(256, 256), PS::Vector2(256, 8));
+	partSystem.EmitterSetRectangle(fireplace, PS::Vector2(256, 8), PS::Vector2(256, 256));
 	partSystem.EmitterSetPoint(fireplace, PS::Vector2());
+	partSystem.EmitterSetCircle(fireplace, 64.0f, PS::Vector2());
 	partSystem.EmitterSetFrequency(fireplace, 0.0001f, 5);
 #if BURST_TEST 
 	partSystem.EmitterSetActive(fireplace, false);
@@ -89,16 +101,35 @@ int main(int argc, const char* argv[])
 
 	// Emitter #2
 	PS::Emitter constFire = partSystem.CreateEmitter(fire);
-	partSystem.EmitterSetCircle(constFire, PS::Vector2(64, 640), 16);
+	partSystem.EmitterSetCircle(constFire, 16, PS::Vector2(64, 640));
 	partSystem.EmitterSetFrequency(constFire, 0.05001f);
-#if 0
+
+	// Spark
+#if SPARK_PARTICLE
+	PS::Particle spark = partSystem.CreateParticle();
+	partSystem.ParticleSetColor(spark, PS::Color(255, 255, 0, 128), PS::Color(255, 255, 255, 64));
+	partSystem.ParticleSetLifetime(spark, 0.1f, 0.3f);
+	partSystem.ParticleSetLifetime(spark, 2.f, 4.f);
+	partSystem.ParticleSetSize(spark, 0.5, 0.5, 0);
+
+	partSystem.ParticleSetSpawnedParticle(fire, spark);
+
+	// StarEmitter
+	
+	PS::Emitter starEmitter = partSystem.CreateEmitter(spark);
+	partSystem.EmitterSetRectangle(starEmitter, 
+		PS::Vector2(width / 2.0f, height / 2.0f), PS::Vector2(width / 2.0f, height / 2.0f));
+	partSystem.EmitterSetFrequency(starEmitter, 8, 100, true);
+#endif
+
+#if 1
 	// FIRE 2
 	/*-------------------------------------*/
 	PS::Particle fire2 = partSystem.CreateParticle();
 	partSystem.ParticleSetSize(fire2, 32, 64, 5);
 	partSystem.ParticleSetRotation(fire2, 0.0f, 360.0f, 60.0f);
 	partSystem.ParticleSetVelocity(fire2, PS::Vector2(64, 16));
-	partSystem.ParticleSetColor(fire2, PS::Color(0, 255, 0, 125), PS::Color(0,0,255,0));
+	partSystem.ParticleSetColor(fire2, PS::Color(0, 255, 255, 64), PS::Color(0,0,255,0));
 	partSystem.ParticleSetLifetime(fire2, 1.0f, 5.0f);
 
 	// Emitter #1
@@ -129,6 +160,15 @@ int main(int argc, const char* argv[])
 	bool LMB = false;
 	bool RMB = false;
 
+	bool num[9] = { false };
+
+	bool debugEmitter = false;
+	bool debugParticleOutline = false;
+	bool enableFpsGraph = false;
+	bool enableDeltaGraph = false;
+
+	sf::Vector2f realMousePos = sf::Vector2f(0, 0);
+
 	while (window.isOpen())
 	{
 		updateDeltatime();
@@ -155,6 +195,47 @@ int main(int argc, const char* argv[])
 				{
 					case sf::Keyboard::Escape:
 						window.close();
+						break;
+
+					case sf::Keyboard::Numpad1:
+						num[1] = true; 
+						debugEmitter = !debugEmitter;
+						break;
+					case sf::Keyboard::Numpad2:
+						num[2] = true;
+						debugParticleOutline = !debugParticleOutline;
+						break;
+					case sf::Keyboard::Numpad3:
+						enableFpsGraph = !enableFpsGraph;
+						num[3] = true;
+						break;
+					case sf::Keyboard::Numpad4:
+						enableDeltaGraph = !enableDeltaGraph;
+						num[4] = true;
+						break;
+					case sf::Keyboard::Numpad5:
+						num[5] = true;
+						break;
+				}
+			}
+			else if (event.type == sf::Event::KeyReleased)
+			{
+				switch (event.key.code)
+				{
+				case sf::Keyboard::Numpad1:
+					num[1] = false;
+					break;
+				case sf::Keyboard::Numpad2:
+					num[2] = false;
+					break;
+				case sf::Keyboard::Numpad3:
+					num[3] = false;
+					break;
+				case sf::Keyboard::Numpad4:
+					num[4] = false;
+					break;
+				case sf::Keyboard::Numpad5:
+					num[5] = false;
 					break;
 				}
 			}
@@ -165,7 +246,7 @@ int main(int argc, const char* argv[])
 					LMB = true;
 
 #if BURST_TEST
-					partSystem.EmitterBurst(fireplace);
+					partSystem.EmitterBurst(fireplace, 50);
 #endif
 				}
 				if (event.mouseButton.button == sf::Mouse::Button::Right)
@@ -186,14 +267,23 @@ int main(int argc, const char* argv[])
 					RMB = false;
 				}
 			}
+			else if (event.type == sf::Event::MouseMoved)
+			{
+				realMousePos.x = (float)event.mouseMove.x;
+				realMousePos.y = (float)event.mouseMove.y;
+			}
 		}
 
-		sf::Vector2i mousePos = sf::Mouse::getPosition(window);
-		partSystem.EmitterSetLocation(fireplace, PS::Vector2((float)mousePos.x, (float)mousePos.y));
+		sf::Vector2f mousePos = GetMousePosition(&window, realMousePos);
+		partSystem.EmitterSetLocation(fireplace, PS::Vector2(mousePos.x, mousePos.y));
 
 #if !BURST_TEST
 		partSystem.EmitterSetActive(fireplace, LMB);
 #endif
+
+		/////////////////////////////////////////////////////////////////////
+		// Render
+		/////////////////////////////////////////////////////////////////////
 
 		// Clear screen
 		window.clear();
@@ -207,23 +297,23 @@ int main(int argc, const char* argv[])
 	#endif
 
 		// render particlesystem
-		for (PS::ParticleIterator it(partSystem); it; it++)
+		unsigned particleCount = 0;
+		for (PS::ParticleIterator It(partSystem); It; It++)
 		{
-			PS::Output particle = (*it);
+			PS::Output particle = (*It);
 
 			PS::Vector2 location = particle.location;
 			PS::Color color = particle.color;
 			float size = particle.size;
 			PS::Vector2 scale = particle.scale;
-			scale *= 2;
-			scale.Y = scale.X;
 
 	#if TEXT_PARTICLE
 
+			scale *= 2;
 			textParticle.setString("+");
 			textParticle.setPosition(location.X, location.Y);
 			textParticle.setRotation(particle.rotation);
-			textParticle.setScale(scale.X, scale.Y);
+			textParticle.setScale(scale.X, scale.X);
 			textParticle.setColor(sf::Color(color.R, color.G, color.B, color.A));
 
 			window.draw(textParticle);
@@ -236,26 +326,59 @@ int main(int argc, const char* argv[])
 			shape.setSize(sf::Vector2f(size, size));
 			shape.setOrigin(size / 2.0f, size / 2.0f);
 			shape.setFillColor(sf::Color(color.R, color.G, color.B, color.A));
-
+			
+			if (debugParticleOutline)
+			{
+				shape.setOutlineColor(sf::Color::Red);
+				shape.setOutlineThickness(1.0f);
+			}
+#if DRAW_ADD
+			sf::RenderStates rs; rs.blendMode = sf::BlendAdd;
+			window.draw(shape, rs);
+#else
 			window.draw(shape);
-	#endif
-		}
-
 #endif
+
+	#endif
+
+			particleCount++;
+		}
+#endif
+
+		/////////////////////////////////////////////////////////////////////
+		// Text
+		/////////////////////////////////////////////////////////////////////
 
 		sf::Text debugLabel;
 		debugLabel.setStyle(sf::Text::Bold);
 		debugLabel.setFont(fnt);
 		debugLabel.setColor(sf::Color::White);
-		debugLabel.setString("Particles: " + std::to_string(partSystem.GetSpawnedParticleCount()));
+		unsigned actualParticleCount = partSystem.GetSpawnedParticleCount();
+		debugLabel.setString("Particles: " + std::to_string(actualParticleCount));
 		debugLabel.setPosition(sf::Vector2f(32, 32));
+
+		if (actualParticleCount != particleCount)
+		{
+			std::cout << "was: " << particleCount << " expected: " 
+				<< actualParticleCount << std::endl;
+		}
+
+		window.draw(debugLabel);
+
+		debugLabel.setString("Emitters: " + std::to_string(partSystem.GetEmitterCount()));
+		debugLabel.setPosition(sf::Vector2f(32, 64));
 
 		window.draw(debugLabel);
 
 		for (unsigned i = 0; i < partSystem.GetParticleTypeCount(); i++)
 		{
 			debugLabel.setString(std::to_string(i) + ": " + std::to_string(partSystem.GetSpawnedParticleCountOfType(i)));
-			debugLabel.setPosition(sf::Vector2f(32.0f, 96.0f + 32.0f*(float)i));
+			debugLabel.setPosition(sf::Vector2f(32.0f, 128.0f + 32.0f*(float)i));
+
+			window.draw(debugLabel);
+
+			debugLabel.setString(std::to_string(i) + ": " + std::to_string(partSystem.GetEmitterTypeCount(i)));
+			debugLabel.setPosition(sf::Vector2f(96.0f, 128.0f + 32.0f*(float)i));
 
 			window.draw(debugLabel);
 		}
@@ -268,11 +391,84 @@ int main(int argc, const char* argv[])
 		debugLabel.setPosition(sf::Vector2f(width - 64.0f, 32.0f));
 		window.draw(debugLabel);
 
+		/////////////////////////////////////////////////////////////////////
+		// Debug Emitter
+		/////////////////////////////////////////////////////////////////////
+
+		if (debugEmitter)
+		{
+			unsigned emitterCount = 0;
+			for (PS::EmitterDebugIterator It(partSystem); It; It++)
+			{
+				PS::EmitterDebugOutput debugEmitter = (*It);
+				PS::Vector2 location = debugEmitter.GetLocation();
+
+				switch (debugEmitter.GetShape())
+				{
+					case PS::EmitterShape::POINT:
+					{
+						sf::CircleShape circle;
+						circle.setPosition(location.X, location.Y);
+						circle.setRadius(2.0f);
+						circle.setFillColor(sf::Color::Red);
+						circle.setOutlineColor(sf::Color::Red);
+						window.draw(circle);
+						break;
+					}
+					case PS::EmitterShape::CIRCLE:
+					{
+						sf::CircleShape circle;
+						circle.setPosition(location.X, location.Y);
+						float circleRadius = debugEmitter.GetCircleRadius();
+						circle.setRadius(circleRadius);
+						circle.setOrigin(sf::Vector2f(circleRadius, circleRadius));
+						circle.setFillColor(sf::Color(255, 0, 0, 64));
+						circle.setOutlineColor(sf::Color::Red);
+						circle.setOutlineThickness(1);
+						window.draw(circle);
+						break;
+					}
+
+					case PS::EmitterShape::RECTANGLE:
+					{
+						sf::RectangleShape rect;
+						rect.setPosition(location.X, location.Y);
+						PS::Vector2 dim = debugEmitter.GetRectangleDimension();
+						rect.setSize(sf::Vector2f(dim.X, dim.Y));
+						rect.setOrigin(sf::Vector2f(dim.X / 2.0f, dim.Y / 2.0f));
+						rect.setFillColor(sf::Color(255, 0, 0, 64));
+						rect.setOutlineColor(sf::Color::Red);
+						rect.setOutlineThickness(1);
+						window.draw(rect);
+						break;
+					}
+				}
+
+				emitterCount++;
+			}
+
+			/*debugLabel.setString(std::to_string(emitterCount));
+			debugLabel.setPosition(sf::Vector2f(8.0f, 8.0f));
+			window.draw(debugLabel);*/
+		}
+
+		/////////////////////////////////////////////////////////////////////
+		// Graphs
+		/////////////////////////////////////////////////////////////////////
+
 		// Fps graph
-#if ENABLE_FPSGRAPH
-		fpsGraph.update((float)fps);
-		fpsGraph.draw(&window, &graphFont, width, height);
-#endif
+		if (enableFpsGraph)
+		{
+			fpsGraph.update((float)fps);
+			fpsGraph.draw(&window, &graphFont, width, height);
+		}
+
+		// Fps graph
+		if (enableDeltaGraph)
+		{
+			deltaGraph.update(deltaTime);
+			deltaGraph.draw(&window, &graphFont, width, height);
+		}
 
 		// Update the window
 		window.display();
