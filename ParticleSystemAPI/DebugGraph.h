@@ -22,7 +22,7 @@ public:
 	void draw(sf::RenderWindow* _window, sf::Font* _font, int _width, int _height);
 	
 	void setEntryCap(unsigned int _cap);
-	void setWarningThreshold(float _value);
+	void setWarningThreshold(float _value, bool _preferSmallerValues = false);
 	void setPosition(float _x, float _y);
 	void toggle();
 	void toggleScale();
@@ -45,6 +45,7 @@ private:
 
 	std::vector<float> m_values;
 	float m_warning;
+	bool m_preferSmallerValues;
 	float m_valueSum;
 	float m_valueMax;
 	float m_valueDif;

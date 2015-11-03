@@ -24,6 +24,146 @@ namespace util {
 namespace PS
 {
 	/////////////////////////////////////////////////////////////////////
+	// Particle
+	/////////////////////////////////////////////////////////////////////
+
+	void Particle::SetLifetime(float minLife, float maxLife)
+	{
+		owner->ParticleSetLifetime(*this, minLife, maxLife);
+	}
+
+	void Particle::SetSize(float sizeMin, float sizeMax, float sizeInc, float sizeWiggle)
+	{
+		owner->ParticleSetSize(*this, sizeMin, sizeMax, sizeInc, sizeWiggle);
+	}
+
+	void Particle::SetRotation(float rotMin, float rotMax, float rotInc, float rotWiggle, bool rotRelative)
+	{
+		owner->ParticleSetRotation(*this, rotMin, rotMax, rotInc, rotWiggle, rotRelative);
+	}
+
+	void Particle::SetScale(float scaleX, float scaleY)
+	{
+		owner->ParticleSetScale(*this, scaleX, scaleY);
+	}
+
+	void Particle::SetColor(Color color)
+	{
+		owner->ParticleSetColor(*this, color, color);
+	}
+
+	void Particle::SetColor(Color colorStart, Color colorEnd)
+	{
+		owner->ParticleSetColor(*this, colorStart, colorEnd);
+	}
+
+	void Particle::SetDirection(float dirMin, float dirMax, float dirInc, float dirWiggle)
+	{
+		owner->ParticleSetDirection(*this, dirMin, dirMax, dirInc, dirWiggle);
+	}
+
+	void Particle::SetSpeed(float speedMin, float speedMax, float speedInc, float speedWiggle)
+	{
+		owner->ParticleSetSpeed(*this, speedMin, speedMax, speedInc, speedWiggle);
+	}
+
+	void Particle::SetVelocity(Vector2 velocity)
+	{
+		owner->ParticleSetVelocity(*this, velocity);
+	}
+
+	void Particle::SetSpawnedParticle(Particle& spawnedParticle)
+	{
+		owner->ParticleSetSpawnedParticle(*this, spawnedParticle);
+	}
+
+	void Particle::SetCustomData(void* data)
+	{
+		owner->ParticleSetCustomData(*this, data);
+	}
+
+	// Private
+
+	Particle::Particle()
+	{
+		Reset();
+	}
+
+	Particle::Particle(ParticleSystem* system)
+	{
+		Reset();
+
+		owner = system;
+	}
+
+	void Particle::Reset()
+	{
+		owner = nullptr;
+		uniqueID = (unsigned)-1;
+		valid = false;
+	}
+
+	/////////////////////////////////////////////////////////////////////
+	// Emitter
+	/////////////////////////////////////////////////////////////////////
+
+	void Emitter::SetLocation(Vector2 location)
+	{
+		owner->EmitterSetLocation(*this, location);
+	}
+
+	void Emitter::SetPoint(Vector2 location)
+	{
+		owner->EmitterSetPoint(*this, location);
+	}
+
+	void Emitter::SetCircle(float radius, Vector2 location)
+	{
+		owner->EmitterSetCircle(*this, radius, location);
+	}
+
+	void Emitter::SetRectangle(Vector2 dimension, Vector2 location)
+	{
+		owner->EmitterSetRectangle(*this, dimension, location);
+	}
+
+	void Emitter::SetFrequency(float frequency, unsigned spawnCount, bool spawnImmediately)
+	{
+		owner->EmitterSetFrequency(*this, frequency, spawnCount, spawnImmediately);
+	}
+
+	void Emitter::Burst(unsigned spawnedParticlesOverride)
+	{
+		owner->EmitterBurst(*this, spawnedParticlesOverride);
+	}
+
+	void Emitter::SetActive(bool state)
+	{
+		owner->EmitterSetActive(*this, state);
+	}
+
+	// Private
+
+	Emitter::Emitter()
+	{
+		Reset();
+	}
+
+	Emitter::Emitter(ParticleSystem* system)
+	{
+		Reset();
+
+		owner = system;
+	}
+
+	void Emitter::Reset()
+	{
+		owner = nullptr;
+		uniqueID = (unsigned)-1;
+		valid = false;
+	}
+
+	/////////////////////////////////////////////////////////////////////
 	// Vector2
 	/////////////////////////////////////////////////////////////////////
 
@@ -524,23 +664,6 @@ namespace PS
 		}
 		numSpawnedParticles = 0;
 
-#if 0
-		unsigned succesullySpawnedCount = 0;
-		for (unsigned i = numSpawnedParticles; i > 0; i--)
-		{
-			if (addParticle(spawnedParticles[i]))
-			{
-				Result++;
-				succesullySpawnedCount++;
-			}
-			else
-			{
-				break;
-			}
-		}
-		numSpawnedParticles -= succesullySpawnedCount;
-#endif
-
 		return Result;
 	}
 
@@ -1024,22 +1147,26 @@ namespace PS
 
 	Particle ParticleSystem::CreateParticle()
 	{
-		Particle handle;
-		handle.uniqueID = numDefinitions;
-		particleDefinitions[numDefinitions].Reset();
+		Particle handle(this);
+		handle.valid = (numDefinitions < MAX_DEFINITIONS);
+		if (handle.valid)
+		{
+			handle.uniqueID = numDefinitions;
+			particleDefinitions[numDefinitions].Reset();
 
-		handle.valid = true;
-		numDefinitions++;
+			numDefinitions++;
+		}
+
 		return handle;
 	}
 
 	Emitter ParticleSystem::CreateEmitter(Particle spawnedParticle)
 	{
-		Emitter handle;
+		Emitter handle(this);
 		handle.particleID = spawnedParticle.uniqueID;
 
 		unsigned currentEmitterCount = particleDefinitions[handle.particleID].numEmitters;
-		handle.valid = (currentEmitterCount < MAX_EMITTERS);
+		handle.valid = (spawnedParticle.valid && currentEmitterCount < MAX_EMITTERS);
 		if (handle.valid)
 		{
 			handle.uniqueID = currentEmitterCount;
@@ -1113,77 +1240,32 @@ namespace PS
 		numParticles -= partCount;
 	}
 
-	void ParticleSystem::EmitterSetLocation(Emitter emitter, Vector2 location)
+	unsigned ParticleSystem::GetParticleTypeCount()
 	{
-		if (emitter.valid == false)
-			return;
-
-		EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
-		def.location = location;
+		return numDefinitions;
 	}
 
-	void ParticleSystem::EmitterSetPoint(Emitter emitter, Vector2 location)
+	unsigned ParticleSystem::GetSpawnedParticleCountOfType(unsigned particle)
 	{
-		if (emitter.valid == false)
-			return;
-
-		EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
-		def.shape = EmitterShape::POINT;
-		def.location = location;
+		return particleDefinitions[particle].numParticles;
 	}
 
-	void ParticleSystem::EmitterSetCircle(Emitter emitter, float radius, Vector2 location)
+	unsigned ParticleSystem::GetSpawnedParticleCount()
 	{
-		if (emitter.valid == false)
-			return;
-
-		EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
-		def.shape = EmitterShape::CIRCLE;
-		def.location = location;
-		def.dimension = Vector2(radius, radius);
+		return numParticles;
 	}
 
-	void ParticleSystem::EmitterSetRectangle(Emitter emitter, Vector2 dimension, Vector2 location)
+	unsigned ParticleSystem::GetEmitterTypeCount(unsigned particle)
 	{
-		if (emitter.valid == false)
-			return;
-
-		EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
-
-		def.shape = EmitterShape::RECTANGLE;
-		def.location = location;
-		def.dimension = dimension;
+		return particleDefinitions[particle].numEmitters;
 	}
 
-	void ParticleSystem::EmitterSetFrequency(Emitter emitter, float frequency, unsigned spawnCount, bool spawnImmediately)
+	unsigned ParticleSystem::GetEmitterCount()
 	{
-		if (emitter.valid == false)
-			return;
-
-		EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
-		def.frequency = frequency;
-		def.particleCount = spawnCount;
-		if (spawnImmediately)
-		{
-			def.InitTimer();
-		}
+		return numEmitters;
 	}
 
-	void ParticleSystem::EmitterBurst(Emitter emitter, unsigned spawnedParticlesOverride)
-	{
-		if (emitter.valid == false)
-			return;
-
-		numParticles += particleDefinitions[emitter.particleID].Burst
-			(emitter.uniqueID,spawnedParticlesOverride);
-	}
-
-	void ParticleSystem::EmitterSetActive(Emitter emitter, bool state)
-	{
-		ParticleDef& def = particleDefinitions[emitter.particleID];
-
-		def.emitterActive[emitter.uniqueID] = state;
-	}
+	// Private
 
 	void ParticleSystem::ParticleSetLifetime(Particle& particle, float minLife, float maxLife)
 	{
@@ -1242,14 +1324,6 @@ namespace PS
 		def.scale = Vector2(scaleX, scaleY);
 	}
 
-	void ParticleSystem::ParticleSetColor(Particle& particle, Color color)
-	{
-		if (particle.valid == false)
-			return;
-
-		ParticleSetColor(particle, color, color);
-	}
-
 	void ParticleSystem::ParticleSetColor(Particle& particle, Color colorStart, Color colorEnd)
 	{
 		if (particle.valid == false)
@@ -1261,7 +1335,7 @@ namespace PS
 		def.colorStartAlpha = (float)colorStart.A;
 		def.colorEndAlpha = (float)colorEnd.A;
 
-		if (def.colorStart != def.colorEnd) 
+		if (def.colorStart != def.colorEnd)
 		{
 			if (def.colorStart.Hue != def.colorEnd.Hue)
 			{
@@ -1276,11 +1350,11 @@ namespace PS
 				def.colorDeltaS = float(def.colorStart.Saturation - def.colorEnd.Saturation) * -1.0f;
 			if (def.colorStart.Luminance != def.colorEnd.Luminance)
 				def.colorDeltaL = float(def.colorStart.Luminance - def.colorEnd.Luminance) * -1.0f;
-		
+
 			def.AddFlag(Flag_HSL);
 			def.AddFlag(Flag_Color);
 		}
-		
+
 		if (colorStart.A != colorEnd.A)
 		{
 			def.colorDeltaA = (def.colorStartAlpha - def.colorEndAlpha) * -1.0f;
@@ -1358,7 +1432,7 @@ namespace PS
 		else if (/*def.speedMax != 0.0f && */def.speedMin == def.speedMax) // Constant
 		{
 			def.updateVelocity(def.speedMax, def.dirMax);
-			
+
 			def.AddFlag(Flag_Velocity);
 			def.AddFlag(Flag_GlobalVelocity);
 		}
@@ -1398,32 +1472,77 @@ namespace PS
 		particleDefinitions[particle.uniqueID].customData = data;
 	}
 
-	unsigned ParticleSystem::GetParticleTypeCount()
+	void ParticleSystem::EmitterSetLocation(Emitter emitter, Vector2 location)
 	{
-		return numDefinitions;
+		if (emitter.valid == false)
+			return;
+
+		EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
+		def.location = location;
 	}
 
-	unsigned ParticleSystem::GetSpawnedParticleCountOfType(unsigned particle)
+	void ParticleSystem::EmitterSetPoint(Emitter emitter, Vector2 location)
 	{
-		return particleDefinitions[particle].numParticles;
+		if (emitter.valid == false)
+			return;
+
+		EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
+		def.shape = EmitterShape::POINT;
+		def.location = location;
 	}
 
-	unsigned ParticleSystem::GetSpawnedParticleCount()
+	void ParticleSystem::EmitterSetCircle(Emitter emitter, float radius, Vector2 location)
 	{
-		return numParticles;
+		if (emitter.valid == false)
+			return;
+
+		EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
+		def.shape = EmitterShape::CIRCLE;
+		def.location = location;
+		def.dimension = Vector2(radius, radius);
 	}
 
-	unsigned ParticleSystem::GetEmitterTypeCount(unsigned particle)
+	void ParticleSystem::EmitterSetRectangle(Emitter emitter, Vector2 dimension, Vector2 location)
 	{
-		return particleDefinitions[particle].numEmitters;
+		if (emitter.valid == false)
+			return;
+
+		EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
+
+		def.shape = EmitterShape::RECTANGLE;
+		def.location = location;
+		def.dimension = dimension;
 	}
 
-	unsigned ParticleSystem::GetEmitterCount()
+	void ParticleSystem::EmitterSetFrequency(Emitter emitter, float frequency, unsigned spawnCount, bool spawnImmediately)
 	{
-		return numEmitters;
+		if (emitter.valid == false)
+			return;
+
+		EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
+		def.frequency = frequency;
+		def.particleCount = spawnCount;
+		if (spawnImmediately)
+		{
+			def.InitTimer();
+		}
 	}
 
-	// Private
+	void ParticleSystem::EmitterBurst(Emitter emitter, unsigned spawnedParticlesOverride)
+	{
+		if (emitter.valid == false)
+			return;
+
+		numParticles += particleDefinitions[emitter.particleID].Burst
+			(emitter.uniqueID, spawnedParticlesOverride);
+	}
+
+	void ParticleSystem::EmitterSetActive(Emitter emitter, bool state)
+	{
+		ParticleDef& def = particleDefinitions[emitter.particleID];
+
+		def.emitterActive[emitter.uniqueID] = state;
+	}
 
 	ParticleSystem::ParticleDef* ParticleSystem::getDefinitionFromIndexParticles(unsigned& index)
 	{

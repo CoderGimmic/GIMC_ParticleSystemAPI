@@ -11,24 +11,83 @@
 
 namespace PS
 {
-	struct Particle
-	{
-		friend class ParticleSystem;
-	private:
-		unsigned uniqueID;
+	class ParticleSystem;
+	struct Vector2;
+	struct Color;
 
+	/////////////////////////////////////////////////////////////////////
+	// Particle
+	/////////////////////////////////////////////////////////////////////
+
+	class Particle
+	{
+	public:
+		friend class ParticleSystem;
+
+		void SetLifetime(float minLife, float maxLife);
+		void SetSize(float sizeMin, float sizeMax, float sizeInc = 0.0f, float sizeWiggle = 0.0f);
+		void SetRotation(float rotMin, float rotMax, float rotInc = 0.0f, float rotWiggle = 0.0f, bool rotRelative = false);
+		void SetScale(float scaleX, float scaleY);
+		void SetColor(Color color);
+		void SetColor(Color colorStart, Color colorEnd);
+		void SetDirection(float dirMin, float dirMax, float dirInc = 0.0f, float dirWiggle = 0.0f);
+		void SetSpeed(float speedMin, float speedMax, float speedInc = 0.0f, float speedWiggle = 0.0f);
+		void SetVelocity(Vector2 velocity);
+		void SetSpawnedParticle(Particle& spawnedParticle);
+		void SetCustomData(void* data);
+
+	private:
+
+		Particle::Particle();
+		Particle::Particle(ParticleSystem* system);
+
+		void Reset();
+
+	private:
+
+		unsigned uniqueID;
 		bool valid;
+
+		ParticleSystem* owner;
 	};
 
-	struct Emitter
+	/////////////////////////////////////////////////////////////////////
+	// Emitter
+	/////////////////////////////////////////////////////////////////////
+
+	class Emitter
 	{
+	public:
 		friend class ParticleSystem;
+
+		void SetLocation(Vector2 location);
+		void SetPoint(Vector2 location);
+		void SetCircle(float radius, Vector2 location);
+		void SetRectangle(Vector2 dimension, Vector2 location);
+		void SetFrequency(float frequency, unsigned spawnCount = 1, bool spawnImmediately = false);
+		void Burst(unsigned spawnedParticlesOverride = (unsigned)-1);
+		void SetActive(bool state);
+
 	private:
+
+		Emitter::Emitter();
+		Emitter::Emitter(ParticleSystem* system);
+
+		void Reset();
+
+	private:
+
 		unsigned uniqueID;
 		unsigned particleID;
 
 		bool valid;
+
+		ParticleSystem* owner;
 	};
+
+	/////////////////////////////////////////////////////////////////////
+	// Vector2
+	/////////////////////////////////////////////////////////////////////
 
 	struct Vector2
 	{
@@ -57,6 +116,10 @@ namespace PS
 		float X, Y;
 	};
 
+	/////////////////////////////////////////////////////////////////////
+	// Color
+	/////////////////////////////////////////////////////////////////////
+
 	struct Color
 	{
 		Color();
@@ -81,6 +144,10 @@ namespace PS
 		void clampColor();
 		unsigned char clampValue(unsigned char value);
 	};
+
+	/////////////////////////////////////////////////////////////////////
+	// HLS
+	/////////////////////////////////////////////////////////////////////
 
 	struct HSL
 	{
@@ -110,6 +177,10 @@ namespace PS
 		CIRCLE,
 		RECTANGLE,
 	};
+
+	/////////////////////////////////////////////////////////////////////
+	// ParticleSystem
+	/////////////////////////////////////////////////////////////////////
 
 	class ParticleSystem
 	{
@@ -145,6 +216,8 @@ namespace PS
 		friend class ParticleIterator;
 		friend class EmitterDebugIterator;
 		friend class EmitterDebugOutput;
+		friend class Particle;
+		friend class Emitter;
 
 		struct ParticleOutput
 		{
@@ -367,26 +440,6 @@ namespace PS
 		void ClearVisibleParticles();
 		void ClearVisibleParticlesOfType(Particle& particle);
 
-		void EmitterSetLocation(Emitter emitter, Vector2 location);
-		void EmitterSetPoint(Emitter emitter, Vector2 location);
-		void EmitterSetCircle(Emitter emitter, float radius, Vector2 location);
-		void EmitterSetRectangle(Emitter emitter, Vector2 dimension, Vector2 location);
-		void EmitterSetFrequency(Emitter emitter, float frequency, unsigned spawnCount = 1, bool spawnImmediately = false);
-		void EmitterBurst(Emitter emitter, unsigned spawnedParticlesOverride = (unsigned)-1);
-		void EmitterSetActive(Emitter emitter, bool state);
-
-		void ParticleSetLifetime(Particle& particle, float minLife, float maxLife);
-		void ParticleSetSize(Particle& particle, float sizeMin, float sizeMax, float sizeInc = 0.0f, float sizeWiggle = 0.0f);
-		void ParticleSetRotation(Particle& particle, float rotMin, float rotMax, float rotInc = 0.0f, float rotWiggle = 0.0f, bool rotRelative = false);
-		void ParticleSetScale(Particle& particle, float scaleX, float scaleY);
-		void ParticleSetColor(Particle& particle, Color color);
-		void ParticleSetColor(Particle& particle, Color colorStart, Color colorEnd);
-		void ParticleSetDirection(Particle& particle, float dirMin, float dirMax, float dirInc = 0.0f, float dirWiggle = 0.0f);
-		void ParticleSetSpeed(Particle& particle, float speedMin, float speedMax, float speedInc = 0.0f, float speedWiggle = 0.0f);
-		void ParticleSetVelocity(Particle& particle, Vector2 velocity);
-		void ParticleSetSpawnedParticle(Particle& particle, Particle spawnedParticle);
-		void ParticleSetCustomData(Particle& particle, void* data);
-
 		unsigned GetParticleTypeCount();
 		unsigned GetSpawnedParticleCountOfType(unsigned particle);
 		unsigned GetSpawnedParticleCount();
@@ -395,6 +448,25 @@ namespace PS
 		unsigned GetEmitterCount();
 
 	private:
+
+		void ParticleSetLifetime(Particle& particle, float minLife, float maxLife);
+		void ParticleSetSize(Particle& particle, float sizeMin, float sizeMax, float sizeInc = 0.0f, float sizeWiggle = 0.0f);
+		void ParticleSetRotation(Particle& particle, float rotMin, float rotMax, float rotInc = 0.0f, float rotWiggle = 0.0f, bool rotRelative = false);
+		void ParticleSetScale(Particle& particle, float scaleX, float scaleY);
+		void ParticleSetColor(Particle& particle, Color colorStart, Color colorEnd);
+		void ParticleSetDirection(Particle& particle, float dirMin, float dirMax, float dirInc = 0.0f, float dirWiggle = 0.0f);
+		void ParticleSetSpeed(Particle& particle, float speedMin, float speedMax, float speedInc = 0.0f, float speedWiggle = 0.0f);
+		void ParticleSetVelocity(Particle& particle, Vector2 velocity);
+		void ParticleSetSpawnedParticle(Particle& particle, Particle spawnedParticle);
+		void ParticleSetCustomData(Particle& particle, void* data);
+
+		void EmitterSetLocation(Emitter emitter, Vector2 location);
+		void EmitterSetPoint(Emitter emitter, Vector2 location);
+		void EmitterSetCircle(Emitter emitter, float radius, Vector2 location);
+		void EmitterSetRectangle(Emitter emitter, Vector2 dimension, Vector2 location);
+		void EmitterSetFrequency(Emitter emitter, float frequency, unsigned spawnCount = 1, bool spawnImmediately = false);
+		void EmitterBurst(Emitter emitter, unsigned spawnedParticlesOverride = (unsigned)-1);
+		void EmitterSetActive(Emitter emitter, bool state);
 
 		ParticleDef* getDefinitionFromIndexParticles(unsigned& index);
 		ParticleDef* getDefenitionFromIndexEmitters(unsigned& index);
@@ -410,6 +482,10 @@ namespace PS
 	};
 
 	typedef ParticleSystem::ParticleOutput Output;
+
+	/////////////////////////////////////////////////////////////////////
+	// ParticleIterator
+	/////////////////////////////////////////////////////////////////////
 
 	class ParticleIterator
 	{
@@ -439,6 +515,10 @@ namespace PS
 		bool reachedEnd;
 	};
 
+	/////////////////////////////////////////////////////////////////////
+	// EmitterDebugOutput
+	/////////////////////////////////////////////////////////////////////
+
 	class EmitterDebugOutput
 	{
 	public:
@@ -454,6 +534,10 @@ namespace PS
 		Vector2 dims;
 		EmitterShape shape;
 	};
+
+	/////////////////////////////////////////////////////////////////////
+	// EmitterDebugIterator
+	/////////////////////////////////////////////////////////////////////
 
 	class EmitterDebugIterator
 	{

@@ -24,6 +24,7 @@ DebugGraph::DebugGraph(std::string _label)
 	m_defaultCap = 200;
 
 	m_warning = FLT_MIN;
+	m_preferSmallerValues = false;
 	m_valueSum = 0.0f;
 
 	m_valueMax = FLT_MIN;
@@ -91,6 +92,9 @@ void DebugGraph::draw(sf::RenderWindow* _window, sf::Font* _font, int _width, in
 	float x_anchor =  m_pos.x > 0.5f ? _width*m_pos.x - width : _width*m_pos.x;
 	float y_anchor =  m_pos.y > 0.5f ? _height*m_pos.y - height : _height*m_pos.y;
 
+	float frontValue = m_values.front();
+	unsigned sizeValues = m_values.size();
+
 	sf::Text txt;
 
 	if (!m_overlayMode)
@@ -114,9 +118,9 @@ void DebugGraph::draw(sf::RenderWindow* _window, sf::Font* _font, int _width, in
 		txt.setColor(sf::Color::White);
 	}
 
-	sf::Vector2f prev_pos(x_anchor + width,y_anchor + height - (m_values.front() - m_valueMin)*step - textOffset);
+	sf::Vector2f prev_pos(x_anchor + width,y_anchor + height - (frontValue - m_valueMin)*step - textOffset);
 
-	float x_offset_add = width / std::min(m_values.size(),m_cacheCap);
+	float x_offset_add = width / std::min(sizeValues, m_cacheCap);
 	float x_offset = x_anchor + width;
 
 	sf::Color color = sf::Color(0,0,255,192);
@@ -132,13 +136,17 @@ void DebugGraph::draw(sf::RenderWindow* _window, sf::Font* _font, int _width, in
 		_window->draw(zeroline, 2, sf::Lines);
 	}
 
-	color = (m_values.front() >= m_warning ? sf::Color::Green : sf::Color::Red);
+	color =
+		m_preferSmallerValues == false ?
+		(frontValue >= m_warning ? sf::Color::Green : sf::Color::Red) :
+		(frontValue < m_warning ? sf::Color::Green : sf::Color::Red);
+
 	if (m_warning == FLT_MIN)
 		color = sf::Color::Yellow;
 
 	for(unsigned int i = 0; i < m_cacheCap; i++)
 	{
-		if (i < m_values.size())
+		if (i < sizeValues)
 		{
 			x_offset -= x_offset_add;
 			sf::Vector2f pos(x_offset, y_anchor + height - (m_values[i] - m_valueMin)*step - textOffset);
@@ -192,9 +200,10 @@ void DebugGraph::setEntryCap(unsigned int _cap)
 	else _cap = m_defaultCap;
 }
 
-void DebugGraph::setWarningThreshold(float _value)
+void DebugGraph::setWarningThreshold(float _value, bool _preferSmallerValues)
 {
 	m_warning = _value;
+	m_preferSmallerValues = _preferSmallerValues;
 }
 
 void DebugGraph::setPosition(float _x, float _y)
