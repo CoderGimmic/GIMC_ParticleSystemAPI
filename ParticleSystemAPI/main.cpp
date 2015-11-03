@@ -8,6 +8,7 @@
 #include "SFML/Graphics/RectangleShape.hpp"
 #include "SFML/Graphics/CircleShape.hpp"
 #include "SFML\Graphics\VertexArray.hpp"
+#include "SFML\Graphics\Sprite.hpp"
 
 #include "ParticleSystem.h"
 
@@ -17,14 +18,6 @@
 #include <string>
 
 //#include <vld.h>
-
-// TODO
-/*---------
-- change array to queue
-- Emitter validity (passing as reference)
-- particle updates on large timeframes (spawning multiple particles) substepping?
-- many public which can be private & overuse of friend class
-*/
 
 float deltaTime = 0.0f;
 sf::Clock deltaClock;
@@ -41,6 +34,24 @@ sf::Vector2f GetMousePositionRelativeToWindow(sf::RenderWindow* window, sf::Vect
 	window->setView(window->getDefaultView());
 	return window->mapPixelToCoords(sf::Vector2i((int)mousePos.x, (int)mousePos.y));
 }
+
+struct ParticleCustomData
+{
+	enum class EParticleType
+	{
+		Sprite,
+		Text,
+		Square,
+	};
+
+	ParticleCustomData::ParticleCustomData(EParticleType _type, void* _data)
+		: data(_data)
+		, type(_type)
+	{}
+
+	void* data;
+	EParticleType type;
+};
 
 int main(int argc, const char* argv[])
 {
@@ -59,6 +70,25 @@ int main(int argc, const char* argv[])
 	sf::Font graphFont;
 	graphFont.loadFromFile("../data/courbd.ttf");
 
+	sf::Texture flareTexture;
+	flareTexture.loadFromFile("../data/flare.png");
+	sf::Texture cursorTexture;
+	cursorTexture.loadFromFile("../data/spr_cursor.png");
+	sf::Texture symbolTexture;
+	symbolTexture.loadFromFile("../data/spr_console.png");
+
+	sf::Sprite flare;
+	flare.setTexture(flareTexture);
+	flare.setOrigin(flareTexture.getSize().x / 2.0f, flareTexture.getSize().y / 2.0f);
+
+	sf::Sprite cursor;
+	cursor.setTexture(cursorTexture);
+	cursor.setOrigin(cursorTexture.getSize().x / 2.0f, cursorTexture.getSize().y / 2.0f);
+
+	sf::Sprite symbol;
+	symbol.setTexture(symbolTexture);
+	symbol.setOrigin(symbolTexture.getSize().x / 2.0f, symbolTexture.getSize().y / 2.0f);
+
 	DebugGraph fpsGraph("FPS");
 	fpsGraph.setEntryCap(240);
 	fpsGraph.setWarningThreshold(55);
@@ -72,12 +102,17 @@ int main(int argc, const char* argv[])
 	deltaGraph.setPosition(0.75f, 1.0f);
 
 #define DRAW_PARTICLE 1
-#define TEXT_PARTICLE 0
 #define UPDATE_PARTICLE 1
+
+#define CUSTOM_PARTICLE 0
+#define GRAPHIC_PARTICLE 0
+#define TEXT_PARTICLE 1
+
 #define BURST_TEST 0
 #define SPARK_PARTICLE 0
 #define DRAW_ADD 0
 
+	sf::String textString("a");
 	PS::ParticleSystem partSystem;
 	
 	// FIRE
@@ -86,10 +121,15 @@ int main(int argc, const char* argv[])
 	fire.SetSize(2, 16, -10);
 	//fire.SetScale(1.0f, 0.1f);
 	fire.SetRotation(0.0f, 360.0f, 0.0f, 0, false);
-	fire.SetSpeed(96, 128, 512);
+	fire.SetSpeed(96, 512, -64);
 	fire.SetDirection(270 - 32, 270 + 32, 90);
 	fire.SetColor(PS::Color(255, 255, 0, 255), PS::Color(255, 0, 0, 0));
-	fire.SetLifetime(2.0f, 2.0f);
+	fire.SetColor(PS::Color::Yellow, PS::Color::Blue);
+	fire.SetLifetime(1.0f, 2.0f);
+	fire.SetCustomData(&flare);
+#if CUSTOM_PARTICLE
+	fire.SetCustomData(&ParticleCustomData(ParticleCustomData::EParticleType::Sprite, &flare));
+#endif
 
 	// Emitter #1
 	PS::Emitter fireplace = partSystem.CreateEmitter(fire);
@@ -110,18 +150,18 @@ int main(int argc, const char* argv[])
 	// Spark
 #if SPARK_PARTICLE
 	PS::Particle spark = partSystem.CreateParticle();
-	spark.SetColor(PS::Color(255, 255, 0, 128), PS::Color(255, 255, 255, 64));
+	spark.SetColor(PS::Color(255, 255, 0, 128), PS::Color(255, 255, 255, 0));
 	spark.SetLifetime(0.1f, 0.3f);
-	spark.SetLifetime(2.f, 4.f);
-	spark.SetSize(0.5, 0.5, 0);
+	spark.SetLifetime(2.f, 3.f);
+	spark.SetSize(0.5, 0.5, 5);
 
 	fire.SetSpawnedParticle(spark);
 
 	// StarEmitter
-	
 	PS::Emitter starEmitter = partSystem.CreateEmitter(spark);
 	starEmitter.SetRectangle(PS::Vector2(width / 2.0f, height / 2.0f), PS::Vector2(width / 2.0f, height / 2.0f));
 	starEmitter.SetFrequency(8, 100, true);
+	starEmitter.SetActive(false);
 #endif
 
 #if 1
@@ -131,8 +171,12 @@ int main(int argc, const char* argv[])
 	fire2.SetSize(32, 64, 5);
 	fire2.SetRotation(0.0f, 360.0f, 60.0f);
 	fire2.SetVelocity(PS::Vector2(64, 16));
-	fire2.SetColor(PS::Color(0, 255, 255, 64), PS::Color(0, 0, 255, 0));
+	fire2.SetColor(PS::Color(0, 255, 255, 128), PS::Color(0, 0, 255, 0));
 	fire2.SetLifetime(1.0f, 5.0f);
+	fire2.SetCustomData(&cursor);
+#if CUSTOM_PARTICLE
+	fire2.SetCustomData(&ParticleCustomData(ParticleCustomData::EParticleType::Text, nullptr));
+#endif
 
 	// Emitter #1
 	PS::Emitter fireplace2 = partSystem.CreateEmitter(fire2);
@@ -148,7 +192,10 @@ int main(int argc, const char* argv[])
 	fire3.SetDirection(270 + 32, 270 - 30);
 	fire3.SetColor(PS::Color(0, 255, 255, 255), PS::Color(0, 0, 255, 0));
 	fire3.SetLifetime(2.0f, 3.0f);
-	fire3.SetSpawnedParticle(fire);
+	fire3.SetCustomData(&symbol);
+#if CUSTOM_PARTICLE
+	fire3.SetCustomData(&ParticleCustomData(ParticleCustomData::EParticleType::Square, nullptr));
+#endif
 
 	// Emitter #1
 	PS::Emitter fireplace3 = partSystem.CreateEmitter(fire3);
@@ -302,11 +349,11 @@ int main(int argc, const char* argv[])
 
 		window.clear();
 
-#if DRAW_PARTICLE
+
 
 	#if TEXT_PARTICLE
 		sf::Text textParticle;
-		textParticle.setFont(fnt);
+		textParticle.setFont(graphFont);
 		textParticle.setStyle(sf::Text::Bold);
 	#endif
 
@@ -314,23 +361,98 @@ int main(int argc, const char* argv[])
 		unsigned particleCount = 0;
 		for (PS::ParticleIterator It(partSystem); It; It++)
 		{
+#if DRAW_PARTICLE
 			PS::Output particle = (*It);
 
 			PS::Vector2 location = particle.location;
 			PS::Color color = particle.color;
 			float size = particle.size;
 			PS::Vector2 scale = particle.scale;
+#if CUSTOM_PARTICLE
 
-	#if TEXT_PARTICLE
+			if (particle.customData == nullptr)
+				continue;
 
-			scale *= 2;
-			textParticle.setString("+");
+			ParticleCustomData::EParticleType type =
+				static_cast<ParticleCustomData>(*(ParticleCustomData*)particle.customData).type;
+
+			switch(type)
+			{
+			case ParticleCustomData::EParticleType::Square:
+			{
+				sf::RectangleShape shape;
+
+				shape.setPosition(location.X, location.Y);
+				shape.setRotation(particle.rotation);
+				shape.setScale(sf::Vector2f(scale.X, scale.Y));
+				shape.setSize(sf::Vector2f(size, size));
+				shape.setOrigin(size / 2.0f, size / 2.0f);
+				shape.setFillColor(sf::Color(color.R, color.G, color.B, color.A));
+
+				if (debugParticleOutline)
+				{
+					shape.setOutlineColor(sf::Color::Red);
+					shape.setOutlineThickness(1.0f);
+				}
+
+				break;
+			}
+			case ParticleCustomData::EParticleType::Text:
+			{
+				textParticle.setCharacterSize(size*3.0f);
+				textParticle.setString(textString);
+				textParticle.setPosition(location.X, location.Y);
+				textParticle.setRotation(particle.rotation);
+				textParticle.setScale(scale.X, scale.X);
+				textParticle.setColor(sf::Color(color.R, color.G, color.B, color.A));
+
+				window.draw(textParticle);
+				break;
+			}
+			case ParticleCustomData::EParticleType::Sprite:
+			{
+				sf::Sprite* spriteParticle = (sf::Sprite*)
+					static_cast<ParticleCustomData>(*(ParticleCustomData*)particle.customData).data;
+
+				if (spriteParticle)
+				{
+					spriteParticle->setPosition(sf::Vector2f(location.X, location.Y));
+					spriteParticle->setScale(scale.X, scale.Y);
+					spriteParticle->setRotation(particle.rotation);
+					spriteParticle->setColor(sf::Color(color.R, color.G, color.B, color.A));
+
+					window.draw(*spriteParticle);
+				}
+				break;
+			}
+				default:
+					break;
+			}
+#else
+
+	#if GRAPHIC_PARTICLE
+#if TEXT_PARTICLE
+			textParticle.setCharacterSize(size*3.0f);
+			textParticle.setString(textString);
 			textParticle.setPosition(location.X, location.Y);
 			textParticle.setRotation(particle.rotation);
 			textParticle.setScale(scale.X, scale.X);
 			textParticle.setColor(sf::Color(color.R, color.G, color.B, color.A));
 
 			window.draw(textParticle);
+#else
+			sf::Sprite* spriteParticle = (sf::Sprite*)particle.customData;
+
+			if (spriteParticle)
+			{
+				spriteParticle->setPosition(sf::Vector2f(location.X, location.Y));
+				spriteParticle->setScale(scale.X, scale.Y);
+				spriteParticle->setRotation(particle.rotation);
+				spriteParticle->setColor(sf::Color(color.R, color.G, color.B, color.A));
+
+				window.draw(*spriteParticle);
+			}
+#endif
 	#else
 			sf::RectangleShape shape;
 
@@ -354,10 +476,11 @@ int main(int argc, const char* argv[])
 #endif
 
 	#endif
-
+#endif
+#endif
 			particleCount++;
 		}
-#endif
+
 
 		/////////////////////////////////////////////////////////////////////
 		// Text
@@ -371,11 +494,13 @@ int main(int argc, const char* argv[])
 		debugLabel.setString("Particles: " + std::to_string(actualParticleCount));
 		debugLabel.setPosition(sf::Vector2f(32, 32));
 
+#if DRAW_PARTICLE
 		if (actualParticleCount != particleCount)
 		{
 			std::cout << "was: " << particleCount << " expected: " 
 				<< actualParticleCount << std::endl;
 		}
+#endif
 
 		window.draw(debugLabel);
 
@@ -392,7 +517,7 @@ int main(int argc, const char* argv[])
 			window.draw(debugLabel);
 
 			debugLabel.setString(std::to_string(i) + ": " + std::to_string(partSystem.GetEmitterTypeCount(i)));
-			debugLabel.setPosition(sf::Vector2f(96.0f, 128.0f + 32.0f*(float)i));
+			debugLabel.setPosition(sf::Vector2f(128.0f, 128.0f + 32.0f*(float)i));
 
 			window.draw(debugLabel);
 		}
@@ -470,9 +595,11 @@ int main(int argc, const char* argv[])
 				emitterCount++;
 			}
 
-			/*debugLabel.setString(std::to_string(emitterCount));
+#if 0
+			debugLabel.setString(std::to_string(emitterCount));
 			debugLabel.setPosition(sf::Vector2f(8.0f, 8.0f));
-			window.draw(debugLabel);*/
+			window.draw(debugLabel);
+#endif
 		}
 
 		/////////////////////////////////////////////////////////////////////

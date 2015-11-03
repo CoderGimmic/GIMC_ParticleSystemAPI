@@ -72,9 +72,9 @@ namespace PS
 		owner->ParticleSetVelocity(*this, velocity);
 	}
 
-	void Particle::SetSpawnedParticle(Particle& spawnedParticle)
+	void Particle::SetSpawnedParticle(Particle& spawnedParticle, unsigned numberOfSpawnedParticles)
 	{
-		owner->ParticleSetSpawnedParticle(*this, spawnedParticle);
+		owner->ParticleSetSpawnedParticle(*this, spawnedParticle, numberOfSpawnedParticles);
 	}
 
 	void Particle::SetCustomData(void* data)
@@ -590,14 +590,13 @@ namespace PS
 		colorEnd = Color();
 
 		particle = (unsigned)-1;
+		particleSpawnCount = 0;
 
 		customData = nullptr;
 		flagBits = 0x0000;
 
 		unsigned ParticlesLeftBeforeReset = numParticles;
 
-		queueFront = (unsigned)-1;
-		queueRear = (unsigned)-1;
 		numParticles = 0;
 		numSpawnedParticles = 0;
 		numEmitters = 0;
@@ -621,7 +620,13 @@ namespace PS
 			particles[i].lifeRemaining -= deltaTime;
 			if (particles[i].lifeRemaining <= 0.0f)
 			{
-				container.Add(particles[i].location);
+				if (particle != (unsigned)-1)
+				{
+					for (unsigned j = 0; j < particleSpawnCount; j++)
+					{
+						container.Add(particles[i].location);
+					}
+				}
 
 				removeParticle(i);
 				Result--;
@@ -645,12 +650,12 @@ namespace PS
 				unsigned particleCount = emitters[i].particleCount * framesPassed;
 				for (unsigned j = 0; j < particleCount; j++)
 				{
-					//spawnLocations[numSpawnedParts++] = emitters[i].GetSpawnLocation();
 					SpawnParticle(emitters[i].GetSpawnLocation());
 				}
 			}
 		}
 
+		// SpawnedParticles
 		for (unsigned i = 0; i < numSpawnedParticles; i++)
 		{
 			if (addParticle(spawnedParticles[i]))
@@ -669,9 +674,6 @@ namespace PS
 
 	unsigned ParticleSystem::ParticleDef::Burst(unsigned emitterIndex, unsigned spawnedParticlesOverride)
 	{
-		/*if (emitterActive[emitterIndex] == false)
-			return;*/
-
 		unsigned Result = 0;
 
 		unsigned numSpawnedBurstParts = 0;
@@ -940,6 +942,10 @@ namespace PS
 	float ParticleSystem::ParticleDef::updateSpeed(float currentSpeed, float deltaTime)
 	{
 		float Result = currentSpeed + (speedInc * deltaTime);
+
+		if (Result <= 0.0f)
+			Result = 0.0f;
+
 		return(Result);
 	}
 
@@ -1456,12 +1462,13 @@ namespace PS
 		}
 	}
 
-	void ParticleSystem::ParticleSetSpawnedParticle(Particle& particle, Particle spawnedParticle)
+	void ParticleSystem::ParticleSetSpawnedParticle(Particle& particle, Particle spawnedParticle, unsigned numberOfSpawnedParticles)
 	{
 		if (particle.valid == false)
 			return;
 
 		particleDefinitions[particle.uniqueID].particle = spawnedParticle.uniqueID;
+		particleDefinitions[particle.uniqueID].particleSpawnCount = numberOfSpawnedParticles;
 	}
 
 	void ParticleSystem::ParticleSetCustomData(Particle& particle, void* data)
@@ -1681,10 +1688,9 @@ namespace PS
 
 		indexCounter = 0;
 
-		//target = nullptr;
 		currentDef = nullptr;
 
-		reachedEnd = false; //partSystem->GetSpawnedParticleCount() == 0 ? true : false;
+		reachedEnd = partSystem->GetEmitterCount() == 0 ? true : false;
 
 		if (reachedEnd == false)
 		{

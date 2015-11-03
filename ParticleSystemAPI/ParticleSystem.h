@@ -33,7 +33,7 @@ namespace PS
 		void SetDirection(float dirMin, float dirMax, float dirInc = 0.0f, float dirWiggle = 0.0f);
 		void SetSpeed(float speedMin, float speedMax, float speedInc = 0.0f, float speedWiggle = 0.0f);
 		void SetVelocity(Vector2 velocity);
-		void SetSpawnedParticle(Particle& spawnedParticle);
+		void SetSpawnedParticle(Particle& spawnedParticle, unsigned numberOfSpawnedParticles = 1);
 		void SetCustomData(void* data);
 
 	private:
@@ -127,6 +127,8 @@ namespace PS
 
 		friend bool operator!=(Color& first, Color& second);
 
+	public:
+
 		unsigned char R, G, B, A;
 
 		static const Color Black;       ///< Black predefined color
@@ -187,10 +189,11 @@ namespace PS
 		static const unsigned MAX_DEFINITIONS = 100;
 		static const unsigned MAX_PARTICLES = 10000;
 		static const unsigned MAX_EMITTERS = 100;
+		static const unsigned MAX_SPAWNCOUNT = 50;
 
 		struct SpawnedParticleContainer
 		{
-			Vector2 locations[50];
+			Vector2 locations[MAX_SPAWNCOUNT];
 			unsigned size;
 
 			SpawnedParticleContainer::SpawnedParticleContainer()
@@ -200,7 +203,7 @@ namespace PS
 
 			bool Add(Vector2 location)
 			{
-				if (size >= MAX_PARTICLES)
+				if (size >= MAX_SPAWNCOUNT)
 					return false;
 
 				locations[size] = location;
@@ -208,7 +211,6 @@ namespace PS
 
 				return true;
 			}
-
 		};
 
 	public:
@@ -359,6 +361,7 @@ namespace PS
 			Vector2 Velocity;
 
 			unsigned particle;
+			unsigned particleSpawnCount;
 			void* customData;
 
 		private:
@@ -384,7 +387,6 @@ namespace PS
 			unsigned short flagBits;
 
 			unsigned numParticles;
-			unsigned queueFront, queueRear;
 			ParticleOutput* particles;
 			unsigned numSpawnedParticles;
 			Vector2* spawnedParticles;
@@ -457,7 +459,7 @@ namespace PS
 		void ParticleSetDirection(Particle& particle, float dirMin, float dirMax, float dirInc = 0.0f, float dirWiggle = 0.0f);
 		void ParticleSetSpeed(Particle& particle, float speedMin, float speedMax, float speedInc = 0.0f, float speedWiggle = 0.0f);
 		void ParticleSetVelocity(Particle& particle, Vector2 velocity);
-		void ParticleSetSpawnedParticle(Particle& particle, Particle spawnedParticle);
+		void ParticleSetSpawnedParticle(Particle& particle, Particle spawnedParticle, unsigned numberOfSpawnedParticles = 1);
 		void ParticleSetCustomData(Particle& particle, void* data);
 
 		void EmitterSetLocation(Emitter emitter, Vector2 location);
