@@ -285,7 +285,7 @@ namespace PS
 			Flag_Direction		= 0x0004, // 3
 			Flag_ConstVelocity	= 0x0008, // 4
 			Flag_Size			= 0x0010, // 5
-			Flag_Rotation		= 000020, // 6
+			Flag_Rotation		= 0x0020, // 6
 			Flag_Color			= 0x0040, // 7
 			Flag_HSL			= 0x0080, // 8
 			Flag_GlobalVelocity	= 0x0100, // 9

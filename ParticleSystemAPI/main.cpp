@@ -62,7 +62,7 @@ int main(int argc, const char* argv[])
 	sf::RenderWindow window(
 		sf::VideoMode(width, height), "ParticleSystemAPI - Demo");
 	window.setMouseCursorVisible(mouseVisible);
-	window.setFramerateLimit(60);
+	window.setFramerateLimit(120);
 
 	sf::Font fnt;
 	fnt.loadFromFile("../data/pixel.ttf");
@@ -104,16 +104,18 @@ int main(int argc, const char* argv[])
 #define DRAW_PARTICLE 1
 #define UPDATE_PARTICLE 1
 
-#define CUSTOM_PARTICLE 0
-#define GRAPHIC_PARTICLE 0
+#define CUSTOM_PARTICLE 0 // NOTE(Per): Test. Don't touch!
+#define GRAPHIC_PARTICLE 0 // Text/Sprite
 #define TEXT_PARTICLE 1
 
 #define BURST_TEST 0
-#define SPARK_PARTICLE 0
+#define SPARK_PARTICLE 1
 #define DRAW_ADD 0
 
 	sf::String textString("a");
 	PS::ParticleSystem partSystem;
+
+	PS::Particle test = partSystem.CreateParticle();
 	
 	// FIRE
 	/*-------------------------------------*/
@@ -124,7 +126,7 @@ int main(int argc, const char* argv[])
 	fire.SetSpeed(96, 512, -64);
 	fire.SetDirection(270 - 32, 270 + 32, 90);
 	fire.SetColor(PS::Color(255, 255, 0, 255), PS::Color(255, 0, 0, 0));
-	fire.SetColor(PS::Color::Yellow, PS::Color::Blue);
+	fire.SetColor(PS::Color::Yellow, PS::Color(0, 0, 255, 0));
 	fire.SetLifetime(1.0f, 2.0f);
 	fire.SetCustomData(&flare);
 #if CUSTOM_PARTICLE
@@ -158,10 +160,12 @@ int main(int argc, const char* argv[])
 	fire.SetSpawnedParticle(spark);
 
 	// StarEmitter
+#if 0
 	PS::Emitter starEmitter = partSystem.CreateEmitter(spark);
 	starEmitter.SetRectangle(PS::Vector2(width / 2.0f, height / 2.0f), PS::Vector2(width / 2.0f, height / 2.0f));
 	starEmitter.SetFrequency(8, 100, true);
 	starEmitter.SetActive(false);
+#endif
 #endif
 
 #if 1
