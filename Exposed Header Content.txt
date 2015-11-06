@@ -1,0 +1,17 @@
+PS::ParticleSystem
+
+PS::Particle
+PS::Emitter
+
+PS::Vector2
+PS::Color
+
+PS::ParticleIterator
+PS::Output
+PS::EmitterDebugIterator
+PS::EmitterdebugOutput
+
+ HIDDEN
+----------------
+PS::ParticleDefinition
+PS::EmitterDefinition
