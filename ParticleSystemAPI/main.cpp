@@ -122,7 +122,7 @@ int main(int argc, const char* argv[])
 	PS::Particle fire = partSystem.CreateParticle();
 	fire.SetSize(2, 16, -10);
 	//fire.SetScale(1.0f, 0.1f);
-	fire.SetRotation(0.0f, 360.0f, 0.0f, 0, false);
+	fire.SetRotation(0.0f, 360.0f, 0.0f, false);
 	fire.SetSpeed(96, 512, -64);
 	fire.SetDirection(270 - 32, 270 + 32, 90);
 	fire.SetColor(PS::Color(255, 255, 0, 255), PS::Color(255, 0, 0, 0));
@@ -160,7 +160,7 @@ int main(int argc, const char* argv[])
 	fire.SetSpawnedParticle(spark);
 
 	// StarEmitter
-#if 0
+#if 1
 	PS::Emitter starEmitter = partSystem.CreateEmitter(spark);
 	starEmitter.SetRectangle(PS::Vector2(width / 2.0f, height / 2.0f), PS::Vector2(width / 2.0f, height / 2.0f));
 	starEmitter.SetFrequency(8, 100, true);
@@ -353,8 +353,6 @@ int main(int argc, const char* argv[])
 
 		window.clear();
 
-
-
 	#if TEXT_PARTICLE
 		sf::Text textParticle;
 		textParticle.setFont(graphFont);
@@ -485,7 +483,6 @@ int main(int argc, const char* argv[])
 			particleCount++;
 		}
 
-
 		/////////////////////////////////////////////////////////////////////
 		// Text
 		/////////////////////////////////////////////////////////////////////
@@ -545,24 +542,27 @@ int main(int argc, const char* argv[])
 			{
 				PS::EmitterDebugOutput debugEmitter = (*It);
 				PS::Vector2 location = debugEmitter.GetLocation();
+				bool activeState = debugEmitter.GetActive();
+
+				sf::Color outlineColor = activeState ? sf::Color(255, 255, 255) : sf::Color(255, 128, 128);
+				sf::Color fillColor = activeState ? sf::Color(255, 255, 255, 64) : sf::Color(255, 128, 128, 64);
 
 				switch (debugEmitter.GetShape())
 				{
 					case PS::EmitterShape::POINT:
 					{
-						sf::Color color = sf::Color(255, 255, 255);
 						float crossSize = 16.f;
 						sf::Vertex horLine[2] =
 						{
-							sf::Vertex(sf::Vector2f(location.X + crossSize, location.Y), color),
-							sf::Vertex(sf::Vector2f(location.X - crossSize, location.Y), color)
+							sf::Vertex(sf::Vector2f(location.X + crossSize, location.Y), outlineColor),
+							sf::Vertex(sf::Vector2f(location.X - crossSize, location.Y), outlineColor)
 						};
 						window.draw(horLine, 2, sf::Lines);
 
 						sf::Vertex vertLine[2] =
 						{
-							sf::Vertex(sf::Vector2f(location.X, location.Y + crossSize), color),
-							sf::Vertex(sf::Vector2f(location.X, location.Y - crossSize), color)
+							sf::Vertex(sf::Vector2f(location.X, location.Y + crossSize), outlineColor),
+							sf::Vertex(sf::Vector2f(location.X, location.Y - crossSize), outlineColor)
 						};
 						window.draw(vertLine, 2, sf::Lines);
 
@@ -575,8 +575,8 @@ int main(int argc, const char* argv[])
 						float circleRadius = debugEmitter.GetCircleRadius();
 						circle.setRadius(circleRadius);
 						circle.setOrigin(sf::Vector2f(circleRadius, circleRadius));
-						circle.setFillColor(sf::Color(255, 255, 255, 64));
-						circle.setOutlineColor(sf::Color(255, 255, 255));
+						circle.setFillColor(fillColor);
+						circle.setOutlineColor(outlineColor);
 						circle.setOutlineThickness(1);
 						window.draw(circle);
 						break;
@@ -588,8 +588,8 @@ int main(int argc, const char* argv[])
 						PS::Vector2 dim = debugEmitter.GetRectangleDimension();
 						rect.setSize(sf::Vector2f(dim.X, dim.Y));
 						rect.setOrigin(sf::Vector2f(dim.X / 2.0f, dim.Y / 2.0f));
-						rect.setFillColor(sf::Color(255, 255, 255, 64));
-						rect.setOutlineColor(sf::Color(255, 255, 255));
+						rect.setFillColor(fillColor);
+						rect.setOutlineColor(outlineColor);
 						rect.setOutlineThickness(1);
 						window.draw(rect);
 						break;

@@ -32,14 +32,14 @@ namespace PS
 		owner->ParticleSetLifetime(*this, minLife, maxLife);
 	}
 
-	void Particle::SetSize(float sizeMin, float sizeMax, float sizeInc, float sizeWiggle)
+	void Particle::SetSize(float sizeMin, float sizeMax, float sizeInc)
 	{
-		owner->ParticleSetSize(*this, sizeMin, sizeMax, sizeInc, sizeWiggle);
+		owner->ParticleSetSize(*this, sizeMin, sizeMax, sizeInc);
 	}
 
-	void Particle::SetRotation(float rotMin, float rotMax, float rotInc, float rotWiggle, bool rotRelative)
+	void Particle::SetRotation(float rotMin, float rotMax, float rotInc, bool rotRelative)
 	{
-		owner->ParticleSetRotation(*this, rotMin, rotMax, rotInc, rotWiggle, rotRelative);
+		owner->ParticleSetRotation(*this, rotMin, rotMax, rotInc, rotRelative);
 	}
 
 	void Particle::SetScale(float scaleX, float scaleY)
@@ -57,14 +57,14 @@ namespace PS
 		owner->ParticleSetColor(*this, colorStart, colorEnd);
 	}
 
-	void Particle::SetDirection(float dirMin, float dirMax, float dirInc, float dirWiggle)
+	void Particle::SetDirection(float dirMin, float dirMax, float dirInc)
 	{
-		owner->ParticleSetDirection(*this, dirMin, dirMax, dirInc, dirWiggle);
+		owner->ParticleSetDirection(*this, dirMin, dirMax, dirInc);
 	}
 
-	void Particle::SetSpeed(float speedMin, float speedMax, float speedInc, float speedWiggle)
+	void Particle::SetSpeed(float speedMin, float speedMax, float speedInc)
 	{
-		owner->ParticleSetSpeed(*this, speedMin, speedMax, speedInc, speedWiggle);
+		owner->ParticleSetSpeed(*this, speedMin, speedMax, speedInc);
 	}
 
 	void Particle::SetVelocity(Vector2 velocity)
@@ -562,23 +562,19 @@ namespace PS
 		sizeMin = 32.0f;
 		sizeMax = 32.0f;
 		sizeInc = 0.0f;
-		sizeWiggle = 0.0f;
 
 		rotationRelative = false;
 		rotationMin = 0.0f;
 		rotationMax = 0.0f;
 		rotationInc = 0.0f;
-		rotationWiggle = 0.0f;
 
 		dirMin = 0.0f;
 		dirMax = 0.0f;
 		dirInc = 0.0f;
-		dirWiggle = 0.0f;
 
 		speedMin = 0.0f;
 		speedMax = 0.0f;
 		speedInc = 0.0f;
-		speedWiggle = 0.0f;
 
 		Velocity = Vector2(0.0f, 0.0f);
 
@@ -736,6 +732,7 @@ namespace PS
 		output.location = emitter->location;
 		output.dims = emitter->dimension;
 		output.shape = emitter->shape;
+		output.active = emitterActive[emitterIndex];
 		return output;
 	}
 
@@ -762,7 +759,7 @@ namespace PS
 		bool varyingSpeed = false;
 		bool varyingDirection = false;
 
-		if (speedInc != 0.0f || speedWiggle != 0.0f) // dynamic speed
+		if (speedInc != 0.0f) // dynamic speed
 		{
 			AddFlag(Flag_Speed);
 			varyingSpeed = true;
@@ -788,7 +785,7 @@ namespace PS
 
 		AddFlag(Flag_Velocity);
 
-		if (dirInc != 0.0f || dirWiggle != 0.0f) // dynamic direction
+		if (dirInc != 0.0f) // dynamic direction
 		{
 			AddFlag(Flag_Direction);
 			varyingDirection = true;
@@ -1286,7 +1283,7 @@ namespace PS
 		def.maxLife = std::max(minLife, maxLife);
 	}
 
-	void ParticleSystem::ParticleSetSize(Particle& particle, float sizeMin, float sizeMax, float sizeInc, float sizeWiggle)
+	void ParticleSystem::ParticleSetSize(Particle& particle, float sizeMin, float sizeMax, float sizeInc)
 	{
 		if (particle.valid == false)
 			return;
@@ -1295,15 +1292,14 @@ namespace PS
 		def.sizeMin = std::min(sizeMin, sizeMax);
 		def.sizeMax = std::max(sizeMin, sizeMax);
 		def.sizeInc = sizeInc;
-		def.sizeWiggle = sizeWiggle;
 
-		if (sizeInc != 0.0f || sizeWiggle != 0.0f)
+		if (sizeInc != 0.0f)
 		{
 			def.AddFlag(Flag_Size);
 		}
 	}
 
-	void ParticleSystem::ParticleSetRotation(Particle& particle, float rotMin, float rotMax, float rotInc /*= 0.0f*/, float rotWiggle /*= 0.0f*/, bool rotRelative /*= false*/)
+	void ParticleSystem::ParticleSetRotation(Particle& particle, float rotMin, float rotMax, float rotInc, bool rotRelative)
 	{
 		if (particle.valid == false)
 			return;
@@ -1312,10 +1308,9 @@ namespace PS
 		def.rotationMin = std::min(rotMin, rotMax);
 		def.rotationMax = std::max(rotMin, rotMax);
 		def.rotationInc = rotInc;
-		def.rotationWiggle = rotWiggle;
 		def.rotationRelative = rotRelative;
 
-		if (rotInc != 0.0f || rotWiggle != 0.0f)
+		if (rotInc != 0.0f)
 		{
 			def.AddFlag(Flag_Rotation);
 		}
@@ -1373,7 +1368,7 @@ namespace PS
 		}
 	}
 
-	void ParticleSystem::ParticleSetDirection(Particle& particle, float dirMin, float dirMax, float dirInc, float dirWiggle)
+	void ParticleSystem::ParticleSetDirection(Particle& particle, float dirMin, float dirMax, float dirInc)
 	{
 		if (particle.valid == false)
 			return;
@@ -1382,34 +1377,11 @@ namespace PS
 		def.dirMin = std::min(dirMin, dirMax);
 		def.dirMax = std::max(dirMin, dirMax);
 		def.dirInc = dirInc;
-		def.dirWiggle = dirWiggle;
 
 		def.CalcNewVelocityData();
-
-#if 0
-		if (dirInc != 0.0f || dirWiggle != 0.0f)
-		{
-			def.AddFlag(Flag_Direction);
-		}
-		else if (def.dirMax != 0.0f && def.dirMin == def.dirMax) // Constant
-		{
-			def.AddFlag(Flag_Direction);
-
-			if (def.speedMax > 0.0f)
-			{
-				def.updateVelocity(def.speedMax, def.dirMax);
-				def.AddFlag(Flag_Velocity);
-				def.AddFlag(Flag_GlobalVelocity);
-			}
-		}
-		else
-		{
-			def.AddFlag(Flag_Direction);
-		}
-#endif
 	}
 
-	void ParticleSystem::ParticleSetSpeed(Particle& particle, float speedMin, float speedMax, float speedInc, float speedWiggle)
+	void ParticleSystem::ParticleSetSpeed(Particle& particle, float speedMin, float speedMax, float speedInc)
 	{
 		if (particle.valid == false)
 			return;
@@ -1418,31 +1390,8 @@ namespace PS
 		def.speedMin = std::min(speedMin, speedMax);
 		def.speedMax = std::max(speedMin, speedMax);
 		def.speedInc = speedInc;
-		def.speedWiggle = speedWiggle;
 
 		def.CalcNewVelocityData();
-
-#if 0
-		if (speedInc != 0.0f || speedWiggle != 0.0f)
-		{
-			def.AddFlag(Flag_Speed);
-			def.AddFlag(Flag_Velocity);
-			def.RemoveFlag(Flag_GlobalVelocity);
-			def.RemoveFlag(Flag_ConstVelocity);
-		}
-		else if (speedMax == 0.0f) // No speed
-		{
-			def.RemoveFlag(Flag_Velocity);
-			def.RemoveFlag(Flag_GlobalVelocity);
-		}
-		else if (/*def.speedMax != 0.0f && */def.speedMin == def.speedMax) // Constant
-		{
-			def.updateVelocity(def.speedMax, def.dirMax);
-
-			def.AddFlag(Flag_Velocity);
-			def.AddFlag(Flag_GlobalVelocity);
-		}
-#endif
 	}
 
 	void ParticleSystem::ParticleSetVelocity(Particle& particle, Vector2 velocity)

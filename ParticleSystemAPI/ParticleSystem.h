@@ -25,13 +25,13 @@ namespace PS
 		friend class ParticleSystem;
 
 		void SetLifetime(float minLife, float maxLife);
-		void SetSize(float sizeMin, float sizeMax, float sizeInc = 0.0f, float sizeWiggle = 0.0f);
-		void SetRotation(float rotMin, float rotMax, float rotInc = 0.0f, float rotWiggle = 0.0f, bool rotRelative = false);
+		void SetSize(float sizeMin, float sizeMax, float sizeInc = 0.0f);
+		void SetRotation(float rotMin, float rotMax, float rotInc = 0.0f, bool rotRelative = false);
 		void SetScale(float scaleX, float scaleY);
 		void SetColor(Color color);
 		void SetColor(Color colorStart, Color colorEnd);
-		void SetDirection(float dirMin, float dirMax, float dirInc = 0.0f, float dirWiggle = 0.0f);
-		void SetSpeed(float speedMin, float speedMax, float speedInc = 0.0f, float speedWiggle = 0.0f);
+		void SetDirection(float dirMin, float dirMax, float dirInc = 0.0f);
+		void SetSpeed(float speedMin, float speedMax, float speedInc = 0.0f);
 		void SetVelocity(Vector2 velocity);
 		void SetSpawnedParticle(Particle& spawnedParticle, unsigned numberOfSpawnedParticles = 1);
 		void SetCustomData(void* data);
@@ -335,7 +335,6 @@ namespace PS
 			// Size
 			float sizeMin, sizeMax;
 			float sizeInc;
-			float sizeWiggle;
 
 			// Color
 			float colorDeltaH, colorDeltaS, colorDeltaL, colorDeltaA;
@@ -346,17 +345,14 @@ namespace PS
 			bool rotationRelative;
 			float rotationMin, rotationMax;
 			float rotationInc;
-			float rotationWiggle;
 
 			// Speed
 			float speedMin, speedMax;
 			float speedInc;
-			float speedWiggle;
 
 			// Direction
 			float dirMin, dirMax;
 			float dirInc;
-			float dirWiggle;
 
 			Vector2 Velocity;
 
@@ -452,12 +448,12 @@ namespace PS
 	private:
 
 		void ParticleSetLifetime(Particle& particle, float minLife, float maxLife);
-		void ParticleSetSize(Particle& particle, float sizeMin, float sizeMax, float sizeInc = 0.0f, float sizeWiggle = 0.0f);
-		void ParticleSetRotation(Particle& particle, float rotMin, float rotMax, float rotInc = 0.0f, float rotWiggle = 0.0f, bool rotRelative = false);
+		void ParticleSetSize(Particle& particle, float sizeMin, float sizeMax, float sizeInc = 0.0f);
+		void ParticleSetRotation(Particle& particle, float rotMin, float rotMax, float rotInc = 0.0f, bool rotRelative = false);
 		void ParticleSetScale(Particle& particle, float scaleX, float scaleY);
 		void ParticleSetColor(Particle& particle, Color colorStart, Color colorEnd);
-		void ParticleSetDirection(Particle& particle, float dirMin, float dirMax, float dirInc = 0.0f, float dirWiggle = 0.0f);
-		void ParticleSetSpeed(Particle& particle, float speedMin, float speedMax, float speedInc = 0.0f, float speedWiggle = 0.0f);
+		void ParticleSetDirection(Particle& particle, float dirMin, float dirMax, float dirInc = 0.0f);
+		void ParticleSetSpeed(Particle& particle, float speedMin, float speedMax, float speedInc = 0.0f);
 		void ParticleSetVelocity(Particle& particle, Vector2 velocity);
 		void ParticleSetSpawnedParticle(Particle& particle, Particle spawnedParticle, unsigned numberOfSpawnedParticles = 1);
 		void ParticleSetCustomData(Particle& particle, void* data);
@@ -526,12 +522,15 @@ namespace PS
 	public:
 		friend class ParticleSystem::ParticleDef;
 
+		bool GetActive() { return active; };
 		Vector2 GetLocation() { return location; };
 		EmitterShape GetShape() { return shape; };
 		Vector2 GetRectangleDimension() { return dims; };
 		float GetCircleRadius() { return dims.X; };
 
 	private:
+
+		bool active;
 		Vector2 location;
 		Vector2 dims;
 		EmitterShape shape;
