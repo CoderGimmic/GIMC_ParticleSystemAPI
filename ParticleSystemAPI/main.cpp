@@ -110,17 +110,18 @@ int main(int argc, const char* argv[])
 
 #define CUSTOM_PARTICLE 0 // NOTE(Per): Test. Don't touch!
 #define GRAPHIC_PARTICLE 0 // Text/Sprite
-#define TEXT_PARTICLE 1
+#define TEXT_PARTICLE 0
 
 #define BURST_TEST 0
 #define SPARK_PARTICLE 0
-#define DRAW_ADD 0
+#define DRAW_ADD 1
 
-	sf::String textString("a");
+	sf::String textString("@");
 	PS::ParticleSystem partSystem;
 
 	PS::Particle test = partSystem.CreateParticle();
 	
+
 	// FIRE
 	/*-------------------------------------*/
 	PS::Particle fire = partSystem.CreateParticle();
@@ -129,9 +130,10 @@ int main(int argc, const char* argv[])
 	fire.SetRotation(0.0f, 360.0f, 0.0f, false);
 	fire.SetSpeed(96, 512, -64);
 	fire.SetDirection(270 - 32, 270 + 32, 90);
-	fire.SetGravity(90, 512);
+	//fire.SetGravity(90, 128);
 	fire.SetColor(PS::Color(255, 255, 0, 255), PS::Color(255, 0, 0, 0));
 	fire.SetColor(PS::Color::Yellow, PS::Color(0, 0, 255, 0));
+	//fire.SetColor(PS::Color::Green, PS::Color(0, 255, 0, 0));
 	fire.SetLifetime(1.0f, 2.0f);
 	fire.SetCustomData(&flare);
 #if CUSTOM_PARTICLE
@@ -141,9 +143,9 @@ int main(int argc, const char* argv[])
 	// Emitter #1
 	PS::Emitter fireplace = partSystem.CreateEmitter(fire);
 	fireplace.SetPoint(PS::Vector2(256.f, 256.f));
-	fireplace.SetRectangle(PS::Vector2(256, 96), PS::Vector2(256, 256));
 	fireplace.SetPoint(PS::Vector2());
 	fireplace.SetCircle(64.0f, PS::Vector2());
+	fireplace.SetRectangle(PS::Vector2(256, 96), PS::Vector2(256, 256));
 	fireplace.SetRim(16);
 	fireplace.SetFrequency(0.0001f, 5);
 #if BURST_TEST 
@@ -215,18 +217,24 @@ int main(int argc, const char* argv[])
 	fireplace3.SetRim(8.0f);
 #endif
 
-	/*PS::Particle planet = partSystem.CreateParticle();
-	planet.SetSize(4, 16, 5);
+	PS::Particle planet = partSystem.CreateParticle();
+	planet.SetSize(4, 16/*, 16*/);
+	//planet.SetScale(0.25, 0.25);
 	planet.SetRotation(0.0f, 360.0f, 0.0f, false);
-	planet.SetSpeed(32, 32);
-	planet.SetDirection(45, 45, 90);
-	planet.SetColor(PS::Color::Blue, PS::Color(255, 255, 0, 0));
-	planet.SetLifetime(8, 8);
+	planet.SetSpeed(16, 96);
+	planet.SetDirection(0, 360, 90);
+	//planet.SetGravity(360, 64);
+	planet.SetColor(PS::Color::Blue, PS::Color(192, 192, 255, 0));
+	//planet.SetColor(PS::Color(255,255,255,0), PS::Color::White);
+	planet.SetLifetime(4, 4);
+	planet.SetAttractorPoint(PS::Vector2(width / 2, height / 2), -256);
+	planet.SetCustomData(&flare);
 
 	PS::Emitter galaxy = partSystem.CreateEmitter(planet);
-	galaxy.SetCircle(128, PS::Vector2(width / 2, height / 2));
-	galaxy.SetRim(5);
-	galaxy.SetFrequency(0.015f);*/
+	galaxy.SetCircle(720 / 2, PS::Vector2(width / 2, height / 2));
+	//galaxy.SetPoint(PS::Vector2(width / 2, height / 2));
+	galaxy.SetRim(16);
+	galaxy.SetFrequency(0.015f, 8);
 
 	float timer = 0;
 
@@ -234,6 +242,8 @@ int main(int argc, const char* argv[])
 	bool LMB = false;
 	bool RMB = false;
 	bool MMB = false;
+	bool X1MB = false;
+	bool X2MB = false;
 
 	bool num[9] = { false };
 
@@ -334,6 +344,10 @@ int main(int argc, const char* argv[])
 					mouseVisible = !mouseVisible;
 					window.setMouseCursorVisible(mouseVisible);
 				}
+				if (event.mouseButton.button == sf::Mouse::Button::XButton1)
+				{
+					X1MB = true;
+				}
 			}
 			else if (event.type == sf::Event::MouseButtonReleased)
 			{
@@ -343,14 +357,18 @@ int main(int argc, const char* argv[])
 				}
 				if (event.mouseButton.button == sf::Mouse::Button::Right)
 				{
-					//partSystem.ClearVisibleParticles();
-					partSystem.ClearVisibleParticlesOfType(fire);
+					partSystem.ClearVisibleParticles();
+					//partSystem.ClearVisibleParticlesOfType(fire);
 
 					RMB = false;
 				}
 				if (event.mouseButton.button == sf::Mouse::Button::Middle)
 				{
 					MMB = true;
+				}
+				if (event.mouseButton.button == sf::Mouse::Button::XButton1)
+				{
+					X1MB = false;
 				}
 			}
 			else if (event.type == sf::Event::MouseMoved)
@@ -362,6 +380,12 @@ int main(int argc, const char* argv[])
 
 		sf::Vector2f mousePos = GetMousePositionRelativeToWindow(&window, realMousePos);
 		fireplace.SetLocation(PS::Vector2(mousePos.x, mousePos.y));
+
+		if (X1MB)
+		{
+			sf::Vector2f mp = GetMousePositionRelativeToWindow(&window, realMousePos);
+			planet.SetAttractorPoint(PS::Vector2(mp.x, mp.y), -720);
+		}
 
 #if !BURST_TEST
 		fireplace.SetActive(LMB);
@@ -472,7 +496,12 @@ int main(int argc, const char* argv[])
 				spriteParticle->setRotation(particle.rotation);
 				spriteParticle->setColor(sf::Color(color.R, color.G, color.B, color.A));
 
+#if DRAW_ADD
+				sf::RenderStates rs; rs.blendMode = sf::BlendAdd;
+				window.draw(*spriteParticle, rs);
+#else
 				window.draw(*spriteParticle);
+#endif
 			}
 #endif
 	#else

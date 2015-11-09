@@ -39,6 +39,7 @@ namespace PS
 		void SetSpeed(float speedMin, float speedMax, float speedChange = 0.0f);
 		void SetVelocity(Vector2 velocity);
 		void SetGravity(float direction, float strength);
+		void SetAttractorPoint(Vector2 position, float strength);
 		void SetSpawnedParticle(Particle& spawnedParticle, unsigned numberOfSpawnedParticles = 1);
 		void SetCustomData(void* data);
 
@@ -301,7 +302,7 @@ namespace PS
 			Flag_HSL			= 0x0080, // 8
 			Flag_GlobalVelocity	= 0x0100, // 9
 			Flag_Gravity		= 0x0200, // 10
-			Flag_Flag11			= 0x0400, // 11
+			Flag_AttractorPoint	= 0x0400, // 11
 			Flag_Flag12			= 0x0800, // 12
 			Flag_Flag13			= 0x1000, // 13
 			Flag_Flag14			= 0x2000, // 14
@@ -368,6 +369,9 @@ namespace PS
 			Vector2 velocity;
 			Vector2 gravity;
 
+			Vector2 attractorPoint;
+			float attractStrength;
+
 			unsigned particle;
 			unsigned particleSpawnCount;
 			void* customData;
@@ -380,7 +384,8 @@ namespace PS
 			void updateColor(ParticleOutput& output, float deltaTime);
 			float updateSpeed(float currentSpeed, float deltaTime);
 			float updateDirection(float currentDirection, float deltaTime);
-			//Vector2 updateVelocity(float currentSpeed, float currentDirection);
+
+			void updateAttractor(ParticleOutput& output, float deltaTime);
 			void updateRotation(ParticleOutput& output, float deltaTime);
 
 			bool addParticle(Vector2 location);
@@ -468,6 +473,7 @@ namespace PS
 		void ParticleSetSpeed(Particle& particle, float speedMin, float speedMax, float speedChange = 0.0f);
 		void ParticleSetVelocity(Particle& particle, Vector2 velocity);
 		void ParticleSetGravity(Particle& particle, float direction, float strength);
+		void ParticleSetAttractorPoint(Particle& particle, Vector2 location, float strength);
 		void ParticleSetSpawnedParticle(Particle& particle, Particle spawnedParticle, unsigned numberOfSpawnedParticles = 1);
 		void ParticleSetCustomData(Particle& particle, void* data);
 

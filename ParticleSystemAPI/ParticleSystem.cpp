@@ -77,6 +77,11 @@ namespace PS
 		owner->ParticleSetGravity(*this, direction, strength);
 	}
 
+	void Particle::SetAttractorPoint(Vector2 position, float strength)
+	{
+		owner->ParticleSetAttractorPoint(*this, position, strength);
+	}
+
 	void Particle::SetSpawnedParticle(Particle& spawnedParticle, unsigned numberOfSpawnedParticles)
 	{
 		owner->ParticleSetSpawnedParticle(*this, spawnedParticle, numberOfSpawnedParticles);
@@ -912,6 +917,9 @@ namespace PS
 
 		if (HasFlag(Flag_Gravity))
 			output.location += gravity * deltaTime;
+
+		if (HasFlag(Flag_AttractorPoint))
+			updateAttractor(output, deltaTime);
 		
 		// Rotation
 		if (HasFlag(Flag_Rotation))
@@ -989,22 +997,14 @@ namespace PS
 		return(Result);
 	}
 
-	/*
-	Vector2 ParticleSystem::ParticleDef::updateVelocity(float currentSpeed, float currentDirection)
+	void ParticleSystem::ParticleDef::updateAttractor(ParticleOutput& output, float deltaTime)
 	{
-		float angle = currentDirection * degToRad;
-		Vector2 dir(cos(angle), sin(angle));
+		Vector2 currentLocation = output.location;
+		Vector2 difference = attractorPoint - currentLocation;
+		difference.Normalize();
 
-		float hyp = sqrtf(dir.X*dir.X + dir.Y*dir.Y);
-		if (hyp > 0.0f)
-		{
-			dir.X /= hyp;
-			dir.Y /= hyp;
-		}
-
-		Vector2 Result(dir.X*currentSpeed, dir.Y*currentSpeed);
-		return(Result);
-	}*/
+		output.location += difference * attractStrength * deltaTime;
+	}
 
 	void ParticleSystem::ParticleDef::updateRotation(ParticleOutput& output, float deltaTime)
 	{
@@ -1443,6 +1443,10 @@ namespace PS
 			def.AddFlag(Flag_HSL);
 			def.AddFlag(Flag_Color);
 		}
+		else
+		{
+			def.RemoveFlag(Flag_HSL);
+		}
 
 		if (colorStart.A != colorEnd.A)
 		{
@@ -1510,6 +1514,25 @@ namespace PS
 		if (def.gravity != Vector2(0.0f, 0.0f))
 		{
 			def.AddFlag(Flag_Gravity);
+		}
+	}
+
+	void ParticleSystem::ParticleSetAttractorPoint(Particle& particle, Vector2 location, float strength)
+	{
+		if (particle.valid == false)
+			return;
+
+		ParticleDef& def = particleDefinitions[particle.uniqueID];
+		def.attractorPoint = location;
+		def.attractStrength = strength;
+
+		if (strength != 0.0f)
+		{
+			def.AddFlag(Flag_AttractorPoint);
+		}
+		else
+		{
+			def.RemoveFlag(Flag_AttractorPoint);
 		}
 	}
 
