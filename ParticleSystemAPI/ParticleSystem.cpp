@@ -32,14 +32,14 @@ namespace PS
 		owner->ParticleSetLifetime(*this, minLife, maxLife);
 	}
 
-	void Particle::SetSize(float sizeMin, float sizeMax, float sizeInc)
+	void Particle::SetSize(float sizeMin, float sizeMax, float sizeChange)
 	{
-		owner->ParticleSetSize(*this, sizeMin, sizeMax, sizeInc);
+		owner->ParticleSetSize(*this, sizeMin, sizeMax, sizeChange);
 	}
 
-	void Particle::SetRotation(float rotMin, float rotMax, float rotInc, bool rotRelative)
+	void Particle::SetRotation(float rotMin, float rotMax, float rotChange, bool rotRelative)
 	{
-		owner->ParticleSetRotation(*this, rotMin, rotMax, rotInc, rotRelative);
+		owner->ParticleSetRotation(*this, rotMin, rotMax, rotChange, rotRelative);
 	}
 
 	void Particle::SetScale(float scaleX, float scaleY)
@@ -57,19 +57,24 @@ namespace PS
 		owner->ParticleSetColor(*this, colorStart, colorEnd);
 	}
 
-	void Particle::SetDirection(float dirMin, float dirMax, float dirInc)
+	void Particle::SetDirection(float dirMin, float dirMax, float dirChange)
 	{
-		owner->ParticleSetDirection(*this, dirMin, dirMax, dirInc);
+		owner->ParticleSetDirection(*this, dirMin, dirMax, dirChange);
 	}
 
-	void Particle::SetSpeed(float speedMin, float speedMax, float speedInc)
+	void Particle::SetSpeed(float speedMin, float speedMax, float speedChange)
 	{
-		owner->ParticleSetSpeed(*this, speedMin, speedMax, speedInc);
+		owner->ParticleSetSpeed(*this, speedMin, speedMax, speedChange);
 	}
 
 	void Particle::SetVelocity(Vector2 velocity)
 	{
 		owner->ParticleSetVelocity(*this, velocity);
+	}
+
+	void Particle::SetGravity(float direction, float strength)
+	{
+		owner->ParticleSetGravity(*this, direction, strength);
 	}
 
 	void Particle::SetSpawnedParticle(Particle& spawnedParticle, unsigned numberOfSpawnedParticles)
@@ -127,6 +132,11 @@ namespace PS
 		owner->EmitterSetRectangle(*this, dimension, location);
 	}
 
+	void Emitter::SetRim(float thickness)
+	{
+		owner->EmitterSetRim(*this, thickness);
+	}
+
 	void Emitter::SetFrequency(float frequency, unsigned spawnCount, bool spawnImmediately)
 	{
 		owner->EmitterSetFrequency(*this, frequency, spawnCount, spawnImmediately);
@@ -171,6 +181,22 @@ namespace PS
 		: X(0.0f)
 		, Y(0.0f)
 	{}
+
+	Vector2 Vector2::CreateUnit(float direction)
+	{
+		float angle = direction * Math::degToRad;
+		float x = cos(angle);
+		float y = sin(angle);
+
+		float hyp = sqrtf(x*x + y*y);
+		if (hyp > 0.0f)
+		{
+			x /= hyp;
+			y /= hyp;
+		}
+
+		return (Vector2(x, y));
+	}
 
 	Vector2::Vector2(float x, float y)
 		: X(x)
@@ -243,20 +269,26 @@ namespace PS
 				first.Y != second.Y);
 	}
 
-	float Vector2::length()
+	float Vector2::Length()
 	{
 		return std::sqrt(X * X + Y * Y);
 	}
 
-	void Vector2::normalize()
+	void Vector2::Normalize()
 	{
-		float len = length();
+		float len = Length();
 		if (len > 0.0f)
 		{
 			float inverted = 1.0f / len;
 			X *= inverted;
 			Y *= inverted;
 		}
+	}
+
+	float Vector2::Distance(Vector2& target)
+	{
+		Vector2 difference = target - *this;
+		return (difference.Length());
 	}
 
 	/////////////////////////////////////////////////////////////////////
@@ -513,8 +545,6 @@ namespace PS
 	// ParticleDef
 	/////////////////////////////////////////////////////////////////////
 
-	const float ParticleSystem::ParticleDef::degToRad = 0.01745329251994329576f;
-
 	ParticleSystem::ParticleDef::ParticleDef()
 	{
 		particles = new ParticleOutput[MAX_PARTICLES];
@@ -561,22 +591,23 @@ namespace PS
 
 		sizeMin = 32.0f;
 		sizeMax = 32.0f;
-		sizeInc = 0.0f;
+		sizeChange = 0.0f;
 
 		rotationRelative = false;
 		rotationMin = 0.0f;
 		rotationMax = 0.0f;
-		rotationInc = 0.0f;
+		rotationChange = 0.0f;
 
 		dirMin = 0.0f;
 		dirMax = 0.0f;
-		dirInc = 0.0f;
+		dirChange = 0.0f;
 
 		speedMin = 0.0f;
 		speedMax = 0.0f;
-		speedInc = 0.0f;
+		speedChange = 0.0f;
 
-		Velocity = Vector2(0.0f, 0.0f);
+		velocity = Vector2(0.0f, 0.0f);
+		gravity = Vector2(0.0f, 0.0f);
 
 		colorDeltaH = 0.0f;
 		colorDeltaS = 0.0f;
@@ -728,11 +759,14 @@ namespace PS
 	EmitterDebugOutput ParticleSystem::ParticleDef::GetEmitter(unsigned emitterIndex)
 	{
 		EmitterDef* emitter = &emitters[emitterIndex];
+
 		EmitterDebugOutput output;
 		output.location = emitter->location;
 		output.dims = emitter->dimension;
 		output.shape = emitter->shape;
+		output.rim = emitter->rim;
 		output.active = emitterActive[emitterIndex];
+
 		return output;
 	}
 
@@ -759,7 +793,7 @@ namespace PS
 		bool varyingSpeed = false;
 		bool varyingDirection = false;
 
-		if (speedInc != 0.0f) // dynamic speed
+		if (speedChange != 0.0f) // dynamic speed
 		{
 			AddFlag(Flag_Speed);
 			varyingSpeed = true;
@@ -785,7 +819,7 @@ namespace PS
 
 		AddFlag(Flag_Velocity);
 
-		if (dirInc != 0.0f) // dynamic direction
+		if (dirChange != 0.0f) // dynamic direction
 		{
 			AddFlag(Flag_Direction);
 			varyingDirection = true;
@@ -805,7 +839,7 @@ namespace PS
 		if (constSpeed && constDirection) // Constant velocity
 		{
 			AddFlag(Flag_GlobalVelocity);
-			Velocity = updateVelocity(speedMax, dirMax);
+			velocity = Vector2::CreateUnit(dirMax) * speedMax;
 			return;
 		}
 		else
@@ -873,8 +907,11 @@ namespace PS
 
 			// Location
 			output.location += 
-				updateVelocity(currentSpeed, currentDirection) * deltaTime;
+				Vector2::CreateUnit(currentDirection) * currentSpeed * deltaTime;
 		}
+
+		if (HasFlag(Flag_Gravity))
+			output.location += gravity * deltaTime;
 		
 		// Rotation
 		if (HasFlag(Flag_Rotation))
@@ -883,7 +920,7 @@ namespace PS
 
 	float ParticleSystem::ParticleDef::updateSize(float currentSize, float deltaTime)
 	{
-		float Result = currentSize + sizeInc*deltaTime;
+		float Result = currentSize + sizeChange*deltaTime;
 
 		if (Result < 0.0f)
 		{
@@ -938,7 +975,7 @@ namespace PS
 
 	float ParticleSystem::ParticleDef::updateSpeed(float currentSpeed, float deltaTime)
 	{
-		float Result = currentSpeed + (speedInc * deltaTime);
+		float Result = currentSpeed + (speedChange * deltaTime);
 
 		if (Result <= 0.0f)
 			Result = 0.0f;
@@ -948,10 +985,11 @@ namespace PS
 
 	float ParticleSystem::ParticleDef::updateDirection(float currentDirection, float deltaTime)
 	{
-		float Result = currentDirection + (dirInc * deltaTime);
+		float Result = currentDirection + (dirChange * deltaTime);
 		return(Result);
 	}
 
+	/*
 	Vector2 ParticleSystem::ParticleDef::updateVelocity(float currentSpeed, float currentDirection)
 	{
 		float angle = currentDirection * degToRad;
@@ -961,12 +999,12 @@ namespace PS
 		if (hyp > 0.0f)
 		{
 			dir.X /= hyp;
-			dir.X /= hyp;
+			dir.Y /= hyp;
 		}
 
 		Vector2 Result(dir.X*currentSpeed, dir.Y*currentSpeed);
 		return(Result);
-	}
+	}*/
 
 	void ParticleSystem::ParticleDef::updateRotation(ParticleOutput& output, float deltaTime)
 	{
@@ -974,7 +1012,7 @@ namespace PS
 			output.rotation = output.locationData.direction();
 		else
 		{
-			output.rotation += rotationInc * deltaTime;
+			output.rotation += rotationChange * deltaTime;
 		}
 	}
 
@@ -1023,7 +1061,7 @@ namespace PS
 		// Constant velocity
 		if (HasFlag(Flag_GlobalVelocity))
 		{
-			output.locationData.Velocity = Velocity;
+			output.locationData.Velocity = velocity;
 			return;
 		}
 		
@@ -1033,7 +1071,7 @@ namespace PS
 		if (HasFlag(Flag_ConstVelocity)) // Individual
 		{
 			output.locationData.Velocity = 
-				updateVelocity(output.locationData.speed(), output.locationData.direction());
+				Vector2::CreateUnit(output.locationData.direction()) * output.locationData.speed();
 		}
 	}
 
@@ -1050,11 +1088,17 @@ namespace PS
 
 	void ParticleSystem::EmitterDef::Reset()
 	{
-		timer = 0.0f;
+		location = Vector2(64, 64);
+		shape = EmitterShape::POINT;
+
+		dimension = Vector2(0.0f, 0.0f);
+		rim = 0.0f;
+		minRectRim = Vector2(0.0f, 0.0f);
+
 		frequency = 1.0f;
 		particleCount = 1;
-		shape = EmitterShape::POINT;
-		location = Vector2(64, 64);
+
+		timer = 0.0f;
 	}
 
 	unsigned ParticleSystem::EmitterDef::Update(float deltaTime)
@@ -1080,22 +1124,57 @@ namespace PS
 			break;
 			case EmitterShape::CIRCLE:
 			{
-				Vector2 Location;
+				Vector2 point;
+
+				float minRadius = rim == 0.0f ? 0.0f : dimension.X - rim;
 
 				float angle = Random::betweenf(0.f, PI_2);
-				float radius = Random::betweenf(0.0f, dimension.X);
+				float radius = Random::betweenf(minRadius, dimension.X);
 
-				Location.X = location.X + radius * cos(angle);
-				Location.Y = location.Y + radius * sin(angle);
+				point.X = location.X + radius * cos(angle);
+				point.Y = location.Y + radius * sin(angle);
 
-				return Location;
+				return point;
 			}
 			break;
 			case EmitterShape::RECTANGLE:
 			{
-				return location +
-					Vector2((dimension.X*-1.0f)*0.5f + Random::random(dimension.X),
-							(dimension.Y*-1.0f)*0.5f + Random::random(dimension.Y));
+				if (rim == 0.0f)
+				{
+					return location +
+						Vector2((dimension.X*-1.0f)*0.5f + Random::random(dimension.X),
+								(dimension.Y*-1.0f)*0.5f + Random::random(dimension.Y));
+				}
+				else
+				{
+					float xPos, yPos;
+					unsigned side = Random::between(1, 4);
+					switch (side)
+					{
+						// Top
+					case 1:
+						xPos = (dimension.X*-1.0f)*0.5f + Random::random(dimension.X);
+						yPos = Random::betweenf(minRectRim.Y, dimension.Y * 0.5f) * -1.0f;
+					break;
+						// Right
+					case 2:
+						xPos = Random::betweenf(minRectRim.X, dimension.X * 0.5f);
+						yPos = (dimension.Y*-1.0f)*0.5f + Random::random(dimension.Y);
+					break;
+						// Down
+					case 3:
+						xPos = (dimension.X*-1.0f)*0.5f + Random::random(dimension.X);
+						yPos = Random::betweenf(minRectRim.Y, dimension.Y * 0.5f);
+					break;
+						// Left
+					case 4:
+						xPos = Random::betweenf(minRectRim.X, dimension.X * 0.5f) * -1.0f;
+						yPos = (dimension.Y*-1.0f)*0.5f + Random::random(dimension.Y);
+					break;
+					}
+
+					return location + Vector2(xPos, yPos);
+				}
 			}
 			break;
 		}
@@ -1106,6 +1185,15 @@ namespace PS
 	void ParticleSystem::EmitterDef::InitTimer()
 	{
 		timer = frequency;
+	}
+
+	void ParticleSystem::EmitterDef::CalcRectRim()
+	{
+		if (rim == 0.0f)
+			return;
+
+		minRectRim.X = (dimension.X * 0.5f) - rim;
+		minRectRim.Y = (dimension.Y * 0.5f) - rim;
 	}
 
 	/////////////////////////////////////////////////////////////////////
@@ -1283,7 +1371,7 @@ namespace PS
 		def.maxLife = std::max(minLife, maxLife);
 	}
 
-	void ParticleSystem::ParticleSetSize(Particle& particle, float sizeMin, float sizeMax, float sizeInc)
+	void ParticleSystem::ParticleSetSize(Particle& particle, float sizeMin, float sizeMax, float sizeChange)
 	{
 		if (particle.valid == false)
 			return;
@@ -1291,15 +1379,15 @@ namespace PS
 		ParticleDef& def = particleDefinitions[particle.uniqueID];
 		def.sizeMin = std::min(sizeMin, sizeMax);
 		def.sizeMax = std::max(sizeMin, sizeMax);
-		def.sizeInc = sizeInc;
+		def.sizeChange = sizeChange;
 
-		if (sizeInc != 0.0f)
+		if (sizeChange != 0.0f)
 		{
 			def.AddFlag(Flag_Size);
 		}
 	}
 
-	void ParticleSystem::ParticleSetRotation(Particle& particle, float rotMin, float rotMax, float rotInc, bool rotRelative)
+	void ParticleSystem::ParticleSetRotation(Particle& particle, float rotMin, float rotMax, float rotChange, bool rotRelative)
 	{
 		if (particle.valid == false)
 			return;
@@ -1307,10 +1395,10 @@ namespace PS
 		ParticleDef& def = particleDefinitions[particle.uniqueID];
 		def.rotationMin = std::min(rotMin, rotMax);
 		def.rotationMax = std::max(rotMin, rotMax);
-		def.rotationInc = rotInc;
+		def.rotationChange = rotChange;
 		def.rotationRelative = rotRelative;
 
-		if (rotInc != 0.0f)
+		if (rotChange != 0.0f)
 		{
 			def.AddFlag(Flag_Rotation);
 		}
@@ -1368,7 +1456,7 @@ namespace PS
 		}
 	}
 
-	void ParticleSystem::ParticleSetDirection(Particle& particle, float dirMin, float dirMax, float dirInc)
+	void ParticleSystem::ParticleSetDirection(Particle& particle, float dirMin, float dirMax, float dirChange)
 	{
 		if (particle.valid == false)
 			return;
@@ -1376,12 +1464,12 @@ namespace PS
 		ParticleDef& def = particleDefinitions[particle.uniqueID];
 		def.dirMin = std::min(dirMin, dirMax);
 		def.dirMax = std::max(dirMin, dirMax);
-		def.dirInc = dirInc;
+		def.dirChange = dirChange;
 
 		def.CalcNewVelocityData();
 	}
 
-	void ParticleSystem::ParticleSetSpeed(Particle& particle, float speedMin, float speedMax, float speedInc)
+	void ParticleSystem::ParticleSetSpeed(Particle& particle, float speedMin, float speedMax, float speedChange)
 	{
 		if (particle.valid == false)
 			return;
@@ -1389,7 +1477,7 @@ namespace PS
 		ParticleDef& def = particleDefinitions[particle.uniqueID];
 		def.speedMin = std::min(speedMin, speedMax);
 		def.speedMax = std::max(speedMin, speedMax);
-		def.speedInc = speedInc;
+		def.speedChange = speedChange;
 
 		def.CalcNewVelocityData();
 	}
@@ -1400,7 +1488,7 @@ namespace PS
 			return;
 
 		ParticleDef& def = particleDefinitions[particle.uniqueID];
-		def.Velocity = velocity;
+		def.velocity = velocity;
 
 		if (velocity != Vector2(0.0f, 0.0f))
 		{
@@ -1408,6 +1496,20 @@ namespace PS
 			def.AddFlag(Flag_GlobalVelocity);
 			def.RemoveFlag(Flag_Speed);
 			def.RemoveFlag(Flag_Direction);
+		}
+	}
+
+	void ParticleSystem::ParticleSetGravity(Particle& particle, float direction, float strength)
+	{
+		if (particle.valid == false)
+			return;
+
+		ParticleDef& def = particleDefinitions[particle.uniqueID];
+		def.gravity = Vector2::CreateUnit(direction) * strength;
+
+		if (def.gravity != Vector2(0.0f, 0.0f))
+		{
+			def.AddFlag(Flag_Gravity);
 		}
 	}
 
@@ -1468,6 +1570,20 @@ namespace PS
 		def.shape = EmitterShape::RECTANGLE;
 		def.location = location;
 		def.dimension = dimension;
+
+		def.CalcRectRim();
+	}
+
+	void ParticleSystem::EmitterSetRim(Emitter emitter, float thickness)
+	{
+		if (emitter.valid == false)
+			return;
+
+		EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
+
+		def.rim = thickness;
+
+		def.CalcRectRim();
 	}
 
 	void ParticleSystem::EmitterSetFrequency(Emitter emitter, float frequency, unsigned spawnCount, bool spawnImmediately)

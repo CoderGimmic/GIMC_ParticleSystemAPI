@@ -11,6 +11,11 @@
 
 namespace PS
 {
+	namespace Math
+	{
+		const static float degToRad = 0.01745329251994329576f;
+	};
+
 	class ParticleSystem;
 	struct Vector2;
 	struct Color;
@@ -25,14 +30,15 @@ namespace PS
 		friend class ParticleSystem;
 
 		void SetLifetime(float minLife, float maxLife);
-		void SetSize(float sizeMin, float sizeMax, float sizeInc = 0.0f);
-		void SetRotation(float rotMin, float rotMax, float rotInc = 0.0f, bool rotRelative = false);
+		void SetSize(float sizeMin, float sizeMax, float sizeChange = 0.0f);
+		void SetRotation(float rotMin, float rotMax, float rotChange = 0.0f, bool rotRelative = false);
 		void SetScale(float scaleX, float scaleY);
 		void SetColor(Color color);
 		void SetColor(Color colorStart, Color colorEnd);
-		void SetDirection(float dirMin, float dirMax, float dirInc = 0.0f);
-		void SetSpeed(float speedMin, float speedMax, float speedInc = 0.0f);
+		void SetDirection(float dirMin, float dirMax, float dirChange = 0.0f);
+		void SetSpeed(float speedMin, float speedMax, float speedChange = 0.0f);
 		void SetVelocity(Vector2 velocity);
+		void SetGravity(float direction, float strength);
 		void SetSpawnedParticle(Particle& spawnedParticle, unsigned numberOfSpawnedParticles = 1);
 		void SetCustomData(void* data);
 
@@ -64,6 +70,7 @@ namespace PS
 		void SetPoint(Vector2 location);
 		void SetCircle(float radius, Vector2 location);
 		void SetRectangle(Vector2 dimension, Vector2 location);
+		void SetRim(float thickness);
 		void SetFrequency(float frequency, unsigned spawnCount = 1, bool spawnImmediately = false);
 		void Burst(unsigned spawnedParticlesOverride = (unsigned)-1);
 		void SetActive(bool state);
@@ -93,6 +100,7 @@ namespace PS
 	{
 		Vector2();
 		Vector2(float x, float y);
+		static Vector2 CreateUnit(float direction);
 
 		Vector2& operator=(const Vector2& rhs);
 		Vector2& operator+=(const Vector2& rhs);
@@ -110,8 +118,11 @@ namespace PS
 
 		friend bool operator!=(Vector2& first, Vector2& second);
 
-		float length();
-		void normalize();
+		float Length();
+		void Normalize();
+		float Distance(Vector2& target);
+
+	public:
 
 		float X, Y;
 	};
@@ -289,7 +300,7 @@ namespace PS
 			Flag_Color			= 0x0040, // 7
 			Flag_HSL			= 0x0080, // 8
 			Flag_GlobalVelocity	= 0x0100, // 9
-			Flag_Flag10			= 0x0200, // 10
+			Flag_Gravity		= 0x0200, // 10
 			Flag_Flag11			= 0x0400, // 11
 			Flag_Flag12			= 0x0800, // 12
 			Flag_Flag13			= 0x1000, // 13
@@ -334,7 +345,7 @@ namespace PS
 			
 			// Size
 			float sizeMin, sizeMax;
-			float sizeInc;
+			float sizeChange;
 
 			// Color
 			float colorDeltaH, colorDeltaS, colorDeltaL, colorDeltaA;
@@ -344,17 +355,18 @@ namespace PS
 			// Rotation
 			bool rotationRelative;
 			float rotationMin, rotationMax;
-			float rotationInc;
+			float rotationChange;
 
 			// Speed
 			float speedMin, speedMax;
-			float speedInc;
+			float speedChange;
 
 			// Direction
 			float dirMin, dirMax;
-			float dirInc;
+			float dirChange;
 
-			Vector2 Velocity;
+			Vector2 velocity;
+			Vector2 gravity;
 
 			unsigned particle;
 			unsigned particleSpawnCount;
@@ -368,7 +380,7 @@ namespace PS
 			void updateColor(ParticleOutput& output, float deltaTime);
 			float updateSpeed(float currentSpeed, float deltaTime);
 			float updateDirection(float currentDirection, float deltaTime);
-			Vector2 updateVelocity(float currentSpeed, float currentDirection);
+			//Vector2 updateVelocity(float currentSpeed, float currentDirection);
 			void updateRotation(ParticleOutput& output, float deltaTime);
 
 			bool addParticle(Vector2 location);
@@ -377,8 +389,6 @@ namespace PS
 			void initParticle(ParticleOutput& info);
 
 		private:
-
-			static const float degToRad;
 
 			unsigned short flagBits;
 
@@ -402,17 +412,19 @@ namespace PS
 			unsigned Update(float deltaTime);
 			Vector2 GetSpawnLocation();
 			void InitTimer();
+			void CalcRectRim();
 
 		public:
 
 			Vector2 location;
 			EmitterShape shape;
 
+			Vector2 dimension;
+			float rim;
+			Vector2 minRectRim;
+
 			float frequency;
 			unsigned particleCount;
-
-			Vector2 point;
-			Vector2 dimension;
 
 		private:
 
@@ -448,13 +460,14 @@ namespace PS
 	private:
 
 		void ParticleSetLifetime(Particle& particle, float minLife, float maxLife);
-		void ParticleSetSize(Particle& particle, float sizeMin, float sizeMax, float sizeInc = 0.0f);
-		void ParticleSetRotation(Particle& particle, float rotMin, float rotMax, float rotInc = 0.0f, bool rotRelative = false);
+		void ParticleSetSize(Particle& particle, float sizeMin, float sizeMax, float sizeChange = 0.0f);
+		void ParticleSetRotation(Particle& particle, float rotMin, float rotMax, float rotChange = 0.0f, bool rotRelative = false);
 		void ParticleSetScale(Particle& particle, float scaleX, float scaleY);
 		void ParticleSetColor(Particle& particle, Color colorStart, Color colorEnd);
-		void ParticleSetDirection(Particle& particle, float dirMin, float dirMax, float dirInc = 0.0f);
-		void ParticleSetSpeed(Particle& particle, float speedMin, float speedMax, float speedInc = 0.0f);
+		void ParticleSetDirection(Particle& particle, float dirMin, float dirMax, float dirChange = 0.0f);
+		void ParticleSetSpeed(Particle& particle, float speedMin, float speedMax, float speedChange = 0.0f);
 		void ParticleSetVelocity(Particle& particle, Vector2 velocity);
+		void ParticleSetGravity(Particle& particle, float direction, float strength);
 		void ParticleSetSpawnedParticle(Particle& particle, Particle spawnedParticle, unsigned numberOfSpawnedParticles = 1);
 		void ParticleSetCustomData(Particle& particle, void* data);
 
@@ -462,6 +475,7 @@ namespace PS
 		void EmitterSetPoint(Emitter emitter, Vector2 location);
 		void EmitterSetCircle(Emitter emitter, float radius, Vector2 location);
 		void EmitterSetRectangle(Emitter emitter, Vector2 dimension, Vector2 location);
+		void EmitterSetRim(Emitter, float thickness);
 		void EmitterSetFrequency(Emitter emitter, float frequency, unsigned spawnCount = 1, bool spawnImmediately = false);
 		void EmitterBurst(Emitter emitter, unsigned spawnedParticlesOverride = (unsigned)-1);
 		void EmitterSetActive(Emitter emitter, bool state);
@@ -527,13 +541,15 @@ namespace PS
 		EmitterShape GetShape() { return shape; };
 		Vector2 GetRectangleDimension() { return dims; };
 		float GetCircleRadius() { return dims.X; };
+		float GetRim() { return rim; };
 
 	private:
 
 		bool active;
 		Vector2 location;
-		Vector2 dims;
 		EmitterShape shape;
+		Vector2 dims;
+		float rim;
 	};
 
 	/////////////////////////////////////////////////////////////////////

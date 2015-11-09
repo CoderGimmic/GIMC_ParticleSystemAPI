@@ -1,14 +1,14 @@
 // main.cpp
 
-#include "SFML\Graphics\RenderWindow.hpp"
-#include "SFML\Window\Event.hpp"
-#include "SFML\System\Vector2.hpp"
-#include "SFML\Graphics\Text.hpp"
-#include "SFML\Graphics\Font.hpp"
+#include "SFML/Graphics/RenderWindow.hpp"
+#include "SFML/Window/Event.hpp"
+#include "SFML/System/Vector2.hpp"
+#include "SFML/Graphics/Text.hpp"
+#include "SFML/Graphics/Font.hpp"
 #include "SFML/Graphics/RectangleShape.hpp"
 #include "SFML/Graphics/CircleShape.hpp"
-#include "SFML\Graphics\VertexArray.hpp"
-#include "SFML\Graphics\Sprite.hpp"
+#include "SFML/Graphics/VertexArray.hpp"
+#include "SFML/Graphics/Sprite.hpp"
 
 #include "ParticleSystem.h"
 
@@ -19,6 +19,10 @@
 
 //#include <vld.h>
 
+/*
+	Base life on parameteter?
+
+*/
 float deltaTime = 0.0f;
 sf::Clock deltaClock;
 
@@ -62,7 +66,7 @@ int main(int argc, const char* argv[])
 	sf::RenderWindow window(
 		sf::VideoMode(width, height), "ParticleSystemAPI - Demo");
 	window.setMouseCursorVisible(mouseVisible);
-	window.setFramerateLimit(120);
+	window.setFramerateLimit(60);
 
 	sf::Font fnt;
 	fnt.loadFromFile("../data/pixel.ttf");
@@ -109,7 +113,7 @@ int main(int argc, const char* argv[])
 #define TEXT_PARTICLE 1
 
 #define BURST_TEST 0
-#define SPARK_PARTICLE 1
+#define SPARK_PARTICLE 0
 #define DRAW_ADD 0
 
 	sf::String textString("a");
@@ -125,6 +129,7 @@ int main(int argc, const char* argv[])
 	fire.SetRotation(0.0f, 360.0f, 0.0f, false);
 	fire.SetSpeed(96, 512, -64);
 	fire.SetDirection(270 - 32, 270 + 32, 90);
+	fire.SetGravity(90, 512);
 	fire.SetColor(PS::Color(255, 255, 0, 255), PS::Color(255, 0, 0, 0));
 	fire.SetColor(PS::Color::Yellow, PS::Color(0, 0, 255, 0));
 	fire.SetLifetime(1.0f, 2.0f);
@@ -138,7 +143,8 @@ int main(int argc, const char* argv[])
 	fireplace.SetPoint(PS::Vector2(256.f, 256.f));
 	fireplace.SetRectangle(PS::Vector2(256, 96), PS::Vector2(256, 256));
 	fireplace.SetPoint(PS::Vector2());
-	//fireplace.SetCircle(64.0f, PS::Vector2());
+	fireplace.SetCircle(64.0f, PS::Vector2());
+	fireplace.SetRim(16);
 	fireplace.SetFrequency(0.0001f, 5);
 #if BURST_TEST 
 	fireplace.SetActive(false);
@@ -204,9 +210,23 @@ int main(int argc, const char* argv[])
 	// Emitter #1
 	PS::Emitter fireplace3 = partSystem.CreateEmitter(fire3);
 	fireplace3.SetPoint(PS::Vector2(1000.f, 640.f));
-	fireplace3.SetRectangle(PS::Vector2(128.0f, 128.0f), PS::Vector2(1000.f, 640.f));
-	fireplace3.SetFrequency(0.05f);
+	fireplace3.SetRectangle(PS::Vector2(128.0f, 128.0f), PS::Vector2(1000.f, 512.f));
+	fireplace3.SetFrequency(0.0005f);
+	fireplace3.SetRim(8.0f);
 #endif
+
+	/*PS::Particle planet = partSystem.CreateParticle();
+	planet.SetSize(4, 16, 5);
+	planet.SetRotation(0.0f, 360.0f, 0.0f, false);
+	planet.SetSpeed(32, 32);
+	planet.SetDirection(45, 45, 90);
+	planet.SetColor(PS::Color::Blue, PS::Color(255, 255, 0, 0));
+	planet.SetLifetime(8, 8);
+
+	PS::Emitter galaxy = partSystem.CreateEmitter(planet);
+	galaxy.SetCircle(128, PS::Vector2(width / 2, height / 2));
+	galaxy.SetRim(5);
+	galaxy.SetFrequency(0.015f);*/
 
 	float timer = 0;
 
@@ -570,28 +590,95 @@ int main(int argc, const char* argv[])
 					}
 					case PS::EmitterShape::CIRCLE:
 					{
-						sf::CircleShape circle;
-						circle.setPosition(location.X, location.Y);
-						float circleRadius = debugEmitter.GetCircleRadius();
-						circle.setRadius(circleRadius);
-						circle.setOrigin(sf::Vector2f(circleRadius, circleRadius));
-						circle.setFillColor(fillColor);
-						circle.setOutlineColor(outlineColor);
-						circle.setOutlineThickness(1);
-						window.draw(circle);
+						float rim = debugEmitter.GetRim();
+						if (rim == 0.0f)
+						{
+							sf::CircleShape circle;
+							circle.setPosition(location.X, location.Y);
+							float circleRadius = debugEmitter.GetCircleRadius();
+							circle.setRadius(circleRadius);
+							circle.setOrigin(sf::Vector2f(circleRadius, circleRadius));
+							circle.setFillColor(fillColor);
+							circle.setOutlineColor(outlineColor);
+							circle.setOutlineThickness(1.0f);
+							window.draw(circle);
+						}
+						else
+						{
+							float circleRadius = debugEmitter.GetCircleRadius();
+							float innerRadius = circleRadius - rim;
+
+							sf::CircleShape circle;
+							circle.setPosition(location.X, location.Y);
+							circle.setFillColor(sf::Color::Transparent);
+							circle.setOutlineColor(outlineColor);
+
+							circle.setRadius(innerRadius);
+							circle.setOrigin(sf::Vector2f(innerRadius, innerRadius));
+							circle.setOutlineThickness(1.0f);
+							window.draw(circle);
+
+							circle.setRadius(circleRadius);
+							circle.setOrigin(sf::Vector2f(circleRadius, circleRadius));
+							window.draw(circle);
+
+							float thickRadius = (innerRadius + circleRadius) * 0.5f;
+							thickRadius -= rim * 0.5f;
+
+							circle.setOutlineColor(fillColor);
+							circle.setOutlineThickness(rim);
+							circle.setRadius(thickRadius);
+							circle.setOrigin(sf::Vector2f(thickRadius, thickRadius));
+							window.draw(circle);
+						}
+
 						break;
 					}
 					case PS::EmitterShape::RECTANGLE:
 					{
-						sf::RectangleShape rect;
-						rect.setPosition(location.X, location.Y);
-						PS::Vector2 dim = debugEmitter.GetRectangleDimension();
-						rect.setSize(sf::Vector2f(dim.X, dim.Y));
-						rect.setOrigin(sf::Vector2f(dim.X / 2.0f, dim.Y / 2.0f));
-						rect.setFillColor(fillColor);
-						rect.setOutlineColor(outlineColor);
-						rect.setOutlineThickness(1);
-						window.draw(rect);
+						float rim = debugEmitter.GetRim();
+						if (rim == 0.0f)
+						{
+							sf::RectangleShape rect;
+							rect.setPosition(location.X, location.Y);
+							PS::Vector2 dim = debugEmitter.GetRectangleDimension();
+							rect.setSize(sf::Vector2f(dim.X, dim.Y));
+							rect.setOrigin(sf::Vector2f(dim.X * 0.5f, dim.Y * 0.5f));
+							rect.setFillColor(fillColor);
+							rect.setOutlineColor(outlineColor);
+							rect.setOutlineThickness(1.0f);
+							window.draw(rect);
+						}
+						else
+						{
+							PS::Vector2 dim = debugEmitter.GetRectangleDimension();
+							PS::Vector2 innerDim(dim.X - rim * 2.0, dim.Y - rim * 2.0);
+
+							sf::RectangleShape rect;
+							rect.setPosition(location.X, location.Y);
+							rect.setFillColor(sf::Color::Transparent);
+							rect.setOutlineColor(outlineColor);
+
+							rect.setSize(sf::Vector2f(innerDim.X, innerDim.Y));
+							rect.setOrigin(sf::Vector2f(innerDim.X * 0.5f, innerDim.Y * 0.5f));
+							rect.setOutlineThickness(1.0f);
+							window.draw(rect);
+
+							rect.setSize(sf::Vector2f(dim.X, dim.Y));
+							rect.setOrigin(sf::Vector2f(dim.X * 0.5f, dim.Y * 0.5f));
+							rect.setOutlineThickness(1.0f);
+							window.draw(rect);
+
+							PS::Vector2 thickDim = PS::Vector2(dim + innerDim) * 0.5f;
+							thickDim.X -= rim;
+							thickDim.Y -= rim;
+
+							rect.setOutlineColor(fillColor);
+							rect.setOutlineThickness(rim);
+							rect.setSize(sf::Vector2f(thickDim.X, thickDim.Y));
+							rect.setOrigin(sf::Vector2f(thickDim.X * 0.5f, thickDim.Y * 0.5f));
+							window.draw(rect);
+						}
 						break;
 					}
 				}
