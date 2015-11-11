@@ -121,7 +121,6 @@ int main(int argc, const char* argv[])
 
 	PS::Particle test = partSystem.CreateParticle();
 	
-
 	// FIRE
 	/*-------------------------------------*/
 	PS::Particle fire = partSystem.CreateParticle();

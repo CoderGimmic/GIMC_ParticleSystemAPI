@@ -643,9 +643,6 @@ namespace PS
 		if (deltaTime == 0.0f)
 			return Result;
 
-		unsigned numSpawnedParts = 0;
-		Vector2 spawnLocations[ParticleSystem::MAX_PARTICLES];
-
 		// Particles
 		for (unsigned i = 0; i < numParticles; i++)
 		{
