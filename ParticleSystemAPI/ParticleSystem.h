@@ -14,6 +14,7 @@ namespace PS
 	namespace Math
 	{
 		const static float degToRad = 0.01745329251994329576f;
+		const static float radToDeg = 57.2957795131f;
 	};
 
 	class ParticleSystem;
@@ -40,6 +41,7 @@ namespace PS
 		void SetVelocity(Vector2 velocity);
 		void SetGravity(float direction, float strength);
 		void SetAttractorPoint(Vector2 position, float strength);
+		void SetRotatorPoint(Vector2 position, bool useDegrees = true);
 		void SetSpawnedParticle(Particle& spawnedParticle, unsigned numberOfSpawnedParticles = 1);
 		void SetCustomData(void* data);
 
@@ -303,7 +305,7 @@ namespace PS
 			Flag_GlobalVelocity	= 0x0100, // 9
 			Flag_Gravity		= 0x0200, // 10
 			Flag_AttractorPoint	= 0x0400, // 11
-			Flag_Flag12			= 0x0800, // 12
+			Flag_Rotator		= 0x0800, // 12
 			Flag_Flag13			= 0x1000, // 13
 			Flag_Flag14			= 0x2000, // 14
 			Flag_Flag15			= 0x4000, // 15
@@ -369,8 +371,13 @@ namespace PS
 			Vector2 velocity;
 			Vector2 gravity;
 
+			// Attractor
 			Vector2 attractorPoint;
 			float attractStrength;
+
+			// Rotator
+			Vector2 rotatorPoint;
+			bool rotatorUseDegrees;
 
 			unsigned particle;
 			unsigned particleSpawnCount;
@@ -386,6 +393,7 @@ namespace PS
 			float updateDirection(float currentDirection, float deltaTime);
 
 			void updateAttractor(ParticleOutput& output, float deltaTime);
+			void updateRotator(ParticleOutput& output, float deltaTime);
 			void updateRotation(ParticleOutput& output, float deltaTime);
 
 			bool addParticle(Vector2 location);
@@ -473,7 +481,8 @@ namespace PS
 		void ParticleSetSpeed(Particle& particle, float speedMin, float speedMax, float speedChange = 0.0f);
 		void ParticleSetVelocity(Particle& particle, Vector2 velocity);
 		void ParticleSetGravity(Particle& particle, float direction, float strength);
-		void ParticleSetAttractorPoint(Particle& particle, Vector2 location, float strength);
+		void ParticleSetAttractorPoint(Particle& particle, Vector2 position, float strength);
+		void ParticleSetRotatorPoint(Particle& particle, Vector2 position, bool useDegrees = true);
 		void ParticleSetSpawnedParticle(Particle& particle, Particle spawnedParticle, unsigned numberOfSpawnedParticles = 1);
 		void ParticleSetCustomData(Particle& particle, void* data);
 

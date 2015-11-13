@@ -82,6 +82,11 @@ namespace PS
 		owner->ParticleSetAttractorPoint(*this, position, strength);
 	}
 
+	void Particle::SetRotatorPoint(Vector2 position, bool useDegrees /* = true */)
+	{
+		owner->ParticleSetRotatorPoint(*this, position, useDegrees);
+	}
+
 	void Particle::SetSpawnedParticle(Particle& spawnedParticle, unsigned numberOfSpawnedParticles)
 	{
 		owner->ParticleSetSpawnedParticle(*this, spawnedParticle, numberOfSpawnedParticles);
@@ -879,37 +884,38 @@ namespace PS
 			if (HasFlag(Flag_ConstVelocity))
 			{
 				output.location += output.locationData.Velocity * deltaTime;
-				return;
 			}
-
-			bool shouldUpdateSpeed = HasFlag(Flag_Speed);
-			bool shouldUpdateDirection = HasFlag(Flag_Direction);
-
-			ParticleOutput::LocationData locationData;
-			locationData = output.locationData;
-			float currentSpeed = locationData.speed();
-			float currentDirection = locationData.direction();
-
-			// Dynamic Speed
-			if (shouldUpdateSpeed) 
+			else
 			{
-				currentSpeed = updateSpeed(currentSpeed, deltaTime);
+				bool shouldUpdateSpeed = HasFlag(Flag_Speed);
+				bool shouldUpdateDirection = HasFlag(Flag_Direction);
+
+				ParticleOutput::LocationData locationData;
+				locationData = output.locationData;
+				float currentSpeed = locationData.speed();
+				float currentDirection = locationData.direction();
+
+				// Dynamic Speed
+				if (shouldUpdateSpeed)
+				{
+					currentSpeed = updateSpeed(currentSpeed, deltaTime);
+				}
+
+				// Dynamic Direction
+				if (shouldUpdateDirection)
+				{
+					currentDirection = updateDirection(currentDirection, deltaTime);
+				}
+
+				// Return calculated data to subject
+				locationData.speed() = currentSpeed;
+				locationData.direction() = currentDirection;
+				output.locationData = locationData;
+
+				// Location
+				output.location +=
+					Vector2::CreateUnit(currentDirection) * currentSpeed * deltaTime;
 			}
-
-			// Dynamic Direction
-			if (shouldUpdateDirection)
-			{
-				currentDirection = updateDirection(currentDirection, deltaTime);
-			}
-
-			// Return calculated data to subject
-			locationData.speed() = currentSpeed;
-			locationData.direction() = currentDirection;
-			output.locationData = locationData;
-
-			// Location
-			output.location += 
-				Vector2::CreateUnit(currentDirection) * currentSpeed * deltaTime;
 		}
 
 		if (HasFlag(Flag_Gravity))
@@ -917,6 +923,9 @@ namespace PS
 
 		if (HasFlag(Flag_AttractorPoint))
 			updateAttractor(output, deltaTime);
+
+		if (HasFlag(Flag_Rotator))
+			updateRotator(output, deltaTime);
 		
 		// Rotation
 		if (HasFlag(Flag_Rotation))
@@ -982,7 +991,7 @@ namespace PS
 	{
 		float Result = currentSpeed + (speedChange * deltaTime);
 
-		if (Result <= 0.0f)
+		if (Result < 0.0f)
 			Result = 0.0f;
 
 		return(Result);
@@ -1001,6 +1010,21 @@ namespace PS
 		difference.Normalize();
 
 		output.location += difference * attractStrength * deltaTime;
+	}
+
+	void ParticleSystem::ParticleDef::updateRotator(ParticleOutput& output, float deltaTime)
+	{
+		float angle = atan2(
+			output.location.Y - rotatorPoint.Y, 
+			output.location.X - rotatorPoint.X);
+
+		angle *= Math::radToDeg;
+
+		angle += output.locationData.speed() * deltaTime;
+
+		float dist = output.location.Distance(rotatorPoint);
+
+		output.location = rotatorPoint + Vector2::CreateUnit(angle) * dist;
 	}
 
 	void ParticleSystem::ParticleDef::updateRotation(ParticleOutput& output, float deltaTime)
@@ -1514,13 +1538,13 @@ namespace PS
 		}
 	}
 
-	void ParticleSystem::ParticleSetAttractorPoint(Particle& particle, Vector2 location, float strength)
+	void ParticleSystem::ParticleSetAttractorPoint(Particle& particle, Vector2 position, float strength)
 	{
 		if (particle.valid == false)
 			return;
 
 		ParticleDef& def = particleDefinitions[particle.uniqueID];
-		def.attractorPoint = location;
+		def.attractorPoint = position;
 		def.attractStrength = strength;
 
 		if (strength != 0.0f)
@@ -1531,6 +1555,18 @@ namespace PS
 		{
 			def.RemoveFlag(Flag_AttractorPoint);
 		}
+	}
+
+	void ParticleSystem::ParticleSetRotatorPoint(Particle& particle, Vector2 position, bool useDegrees /* = true */)
+	{
+		if (particle.valid == false)
+			return;
+
+		ParticleDef& def = particleDefinitions[particle.uniqueID];
+		def.rotatorPoint = position;
+		def.rotatorUseDegrees = useDegrees;
+
+		def.AddFlag(Flag_Rotator);
 	}
 
 	void ParticleSystem::ParticleSetSpawnedParticle(Particle& particle, Particle spawnedParticle, unsigned numberOfSpawnedParticles)

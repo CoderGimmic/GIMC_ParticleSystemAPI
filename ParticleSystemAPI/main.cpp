@@ -175,6 +175,7 @@ int main(int argc, const char* argv[])
 #endif
 #endif
 
+#if 0
 #if 1
 	// FIRE 2
 	/*-------------------------------------*/
@@ -193,6 +194,8 @@ int main(int argc, const char* argv[])
 	PS::Emitter fireplace2 = partSystem.CreateEmitter(fire2);
 	fireplace2.SetPoint(PS::Vector2(512.f, 256.f));
 	fireplace2.SetFrequency(0.75f);
+
+#endif
 
 	// FIRE 3
 	/*-------------------------------------*/
@@ -216,24 +219,51 @@ int main(int argc, const char* argv[])
 	fireplace3.SetRim(8.0f);
 #endif
 
+	PS::Vector2 middle = PS::Vector2(width / 2, height / 2);
+
 	PS::Particle planet = partSystem.CreateParticle();
 	planet.SetSize(4, 16/*, 16*/);
 	//planet.SetScale(0.25, 0.25);
 	planet.SetRotation(0.0f, 360.0f, 0.0f, false);
-	planet.SetSpeed(16, 96);
-	planet.SetDirection(0, 360, 90);
+	planet.SetSpeed(48.0f, 64.0f);
+	//planet.SetDirection(0, 0, 0.000001f);
 	//planet.SetGravity(360, 64);
-	planet.SetColor(PS::Color::Blue, PS::Color(192, 192, 255, 0));
+	planet.SetColor(PS::Color(128, 64, 255, 0), PS::Color(64, 64, 255, 255));
 	//planet.SetColor(PS::Color(255,255,255,0), PS::Color::White);
 	planet.SetLifetime(4, 4);
-	planet.SetAttractorPoint(PS::Vector2(width / 2, height / 2), -256);
+	planet.SetAttractorPoint(middle, 96 );
+	planet.SetRotatorPoint(middle - PS::Vector2(0, 48));
 	planet.SetCustomData(&flare);
+	//planet.SetSpawnedParticle(fire);
 
+#if 1
+	float galaxyFreq = 0.025f;
+	float galaxySize = 320.0f;
+
+	unsigned branches = 5;
+	float angle = 0.0f;
+	float angleInc = 360.0f / branches;
+	for (unsigned i = 0; i < branches; i++)
+	{
+		PS::Emitter galaxy = partSystem.CreateEmitter(planet);
+		galaxy.SetFrequency(galaxyFreq, 3);
+		galaxy.SetPoint(middle + PS::Vector2::CreateUnit(angle) * galaxySize);
+
+		angle += angleInc;
+	}
+
+	PS::Emitter middlePoint = partSystem.CreateEmitter(planet);
+	middlePoint.SetPoint(middle);
+	middlePoint.SetActive(false);
+
+#else
 	PS::Emitter galaxy = partSystem.CreateEmitter(planet);
-	galaxy.SetCircle(720 / 2, PS::Vector2(width / 2, height / 2));
+	galaxy.SetCircle(256, PS::Vector2(width / 2, height / 2));
 	//galaxy.SetPoint(PS::Vector2(width / 2, height / 2));
-	galaxy.SetRim(16);
-	galaxy.SetFrequency(0.015f, 8);
+	//galaxy.SetRim(16);
+	galaxy.SetFrequency(0.015f, 1);
+	//galaxy.SetFrequency(1);
+#endif
 
 	float timer = 0;
 
@@ -383,7 +413,7 @@ int main(int argc, const char* argv[])
 		if (X1MB)
 		{
 			sf::Vector2f mp = GetMousePositionRelativeToWindow(&window, realMousePos);
-			planet.SetAttractorPoint(PS::Vector2(mp.x, mp.y), -720);
+			planet.SetRotatorPoint(PS::Vector2(mp.x, mp.y));
 		}
 
 #if !BURST_TEST
