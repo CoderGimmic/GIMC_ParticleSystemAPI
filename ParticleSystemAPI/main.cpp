@@ -113,7 +113,7 @@ int main(int argc, const char* argv[])
 #define TEXT_PARTICLE 0
 
 #define BURST_TEST 0
-#define SPARK_PARTICLE 0
+#define SPARK_PARTICLE 1
 #define DRAW_ADD 1
 
 	sf::String textString("@");
@@ -155,23 +155,24 @@ int main(int argc, const char* argv[])
 	PS::Emitter constFire = partSystem.CreateEmitter(fire);
 	constFire.SetCircle(16, PS::Vector2(64, 640));
 	constFire.SetFrequency(0.05001f);
+	constFire.SetActive(false);
 
 	// Spark
 #if SPARK_PARTICLE
 	PS::Particle spark = partSystem.CreateParticle();
 	spark.SetColor(PS::Color(255, 255, 0, 128), PS::Color(255, 255, 255, 0));
 	spark.SetLifetime(0.1f, 0.3f);
-	spark.SetLifetime(2.f, 3.f);
-	spark.SetSize(0.5, 0.5, 5);
+	spark.SetLifetime(5.f, 10.f);
+	spark.SetSize(2, 2);
 
-	fire.SetSpawnedParticle(spark);
+	//fire.SetSpawnedParticle(spark);
 
 	// StarEmitter
 #if 1
 	PS::Emitter starEmitter = partSystem.CreateEmitter(spark);
-	starEmitter.SetRectangle(PS::Vector2(width / 2.0f, height / 2.0f), PS::Vector2(width / 2.0f, height / 2.0f));
-	starEmitter.SetFrequency(8, 100, true);
-	starEmitter.SetActive(false);
+	starEmitter.SetRectangle(PS::Vector2((float)width, (float)height), PS::Vector2((float)width / 2.0f, (float)height / 2.0f));
+	starEmitter.SetFrequency(0.5f, 20, true);
+	starEmitter.SetActive(true);
 #endif
 #endif
 
@@ -219,25 +220,35 @@ int main(int argc, const char* argv[])
 	fireplace3.SetRim(8.0f);
 #endif
 
-	PS::Vector2 middle = PS::Vector2(width / 2, height / 2);
+	PS::Vector2 middle = PS::Vector2(width / 2.0f, height / 2.0f);
+
+	bool useDegrees = true;
+	float rotSpeed = 512.0f;
 
 	PS::Particle planet = partSystem.CreateParticle();
 	planet.SetSize(4, 16/*, 16*/);
 	//planet.SetScale(0.25, 0.25);
-	planet.SetRotation(0.0f, 360.0f, 0.0f, false);
-	planet.SetSpeed(48.0f, 64.0f);
-	//planet.SetDirection(0, 0, 0.000001f);
+	planet.SetRotation(0.0f, 360.0f, 90.0f, false);
+	if (useDegrees)
+		planet.SetSpeed(32.0f, 64.0f);
+	else
+		planet.SetSpeed(rotSpeed, rotSpeed, rotSpeed / 10);
+	//planet.SetDirection(0, 360);
 	//planet.SetGravity(360, 64);
 	planet.SetColor(PS::Color(128, 64, 255, 0), PS::Color(64, 64, 255, 255));
 	//planet.SetColor(PS::Color(255,255,255,0), PS::Color::White);
 	planet.SetLifetime(4, 4);
-	planet.SetAttractorPoint(middle, 96 );
-	planet.SetRotatorPoint(middle - PS::Vector2(0, 48));
+	planet.SetAttractorPoint(middle, 128, true);
+	//planet.SetAttractorRange(128.0f, true);
+	planet.SetRotatorPoint(middle /*- PS::Vector2(0, 48)*/, useDegrees);
+	//planet.SetRotatorRange(128.0f, true);
 	planet.SetCustomData(&flare);
 	//planet.SetSpawnedParticle(fire);
 
 #if 1
 	float galaxyFreq = 0.025f;
+	//galaxyFreq = 1;
+	unsigned planetCount = 3;
 	float galaxySize = 320.0f;
 
 	unsigned branches = 5;
@@ -246,7 +257,7 @@ int main(int argc, const char* argv[])
 	for (unsigned i = 0; i < branches; i++)
 	{
 		PS::Emitter galaxy = partSystem.CreateEmitter(planet);
-		galaxy.SetFrequency(galaxyFreq, 3);
+		galaxy.SetFrequency(galaxyFreq, planetCount);
 		galaxy.SetPoint(middle + PS::Vector2::CreateUnit(angle) * galaxySize);
 
 		angle += angleInc;
@@ -255,6 +266,10 @@ int main(int argc, const char* argv[])
 	PS::Emitter middlePoint = partSystem.CreateEmitter(planet);
 	middlePoint.SetPoint(middle);
 	middlePoint.SetActive(false);
+
+	PS::Emitter middleCircle = partSystem.CreateEmitter(planet);
+	middleCircle.SetCircle(galaxySize, middle);
+	middleCircle.SetActive(false);
 
 #else
 	PS::Emitter galaxy = partSystem.CreateEmitter(planet);
@@ -273,6 +288,7 @@ int main(int argc, const char* argv[])
 	bool MMB = false;
 	bool X1MB = false;
 	bool X2MB = false;
+	bool updateEnabled = true;
 
 	bool num[9] = { false };
 
@@ -290,7 +306,7 @@ int main(int argc, const char* argv[])
 		int fps = (int)(1.0f / deltaTime);
 
 #if UPDATE_PARTICLE
-		partSystem.Update(deltaTime);
+		partSystem.Update(deltaTime * updateEnabled);
 #endif
 
 		// Process events
@@ -307,29 +323,29 @@ int main(int argc, const char* argv[])
 			{
 				switch (event.key.code)
 				{
-					case sf::Keyboard::Escape:
-						window.close();
-						break;
+				case sf::Keyboard::Escape:
+					window.close();
+					break;
 
-					case sf::Keyboard::Numpad1:
-						num[1] = true; 
-						debugEmitter = !debugEmitter;
-						break;
-					case sf::Keyboard::Numpad2:
-						num[2] = true;
-						debugParticleOutline = !debugParticleOutline;
-						break;
-					case sf::Keyboard::Numpad3:
-						enableFpsGraph = !enableFpsGraph;
-						num[3] = true;
-						break;
-					case sf::Keyboard::Numpad4:
-						enableDeltaGraph = !enableDeltaGraph;
-						num[4] = true;
-						break;
-					case sf::Keyboard::Numpad5:
-						num[5] = true;
-						break;
+				case sf::Keyboard::Numpad1:
+					num[1] = true; 
+					debugEmitter = !debugEmitter;
+					break;
+				case sf::Keyboard::Numpad2:
+					num[2] = true;
+					debugParticleOutline = !debugParticleOutline;
+					break;
+				case sf::Keyboard::Numpad3:
+					enableFpsGraph = !enableFpsGraph;
+					num[3] = true;
+					break;
+				case sf::Keyboard::Numpad4:
+					enableDeltaGraph = !enableDeltaGraph;
+					num[4] = true;
+					break;
+				case sf::Keyboard::Numpad5:
+					num[5] = true;
+					break;
 				}
 			}
 			else if (event.type == sf::Event::KeyReleased)
@@ -377,6 +393,11 @@ int main(int argc, const char* argv[])
 				{
 					X1MB = true;
 				}
+				if (event.mouseButton.button == sf::Mouse::Button::XButton2)
+				{
+					updateEnabled = !updateEnabled;
+					X2MB = true;
+				}
 			}
 			else if (event.type == sf::Event::MouseButtonReleased)
 			{
@@ -393,11 +414,15 @@ int main(int argc, const char* argv[])
 				}
 				if (event.mouseButton.button == sf::Mouse::Button::Middle)
 				{
-					MMB = true;
+					MMB = false;
 				}
 				if (event.mouseButton.button == sf::Mouse::Button::XButton1)
 				{
 					X1MB = false;
+				}
+				if (event.mouseButton.button == sf::Mouse::Button::XButton2)
+				{
+					X2MB = false;
 				}
 			}
 			else if (event.type == sf::Event::MouseMoved)
@@ -710,7 +735,7 @@ int main(int argc, const char* argv[])
 						else
 						{
 							PS::Vector2 dim = debugEmitter.GetRectangleDimension();
-							PS::Vector2 innerDim(dim.X - rim * 2.0, dim.Y - rim * 2.0);
+							PS::Vector2 innerDim(dim.X - rim * 2.0f, dim.Y - rim * 2.0f);
 
 							sf::RectangleShape rect;
 							rect.setPosition(location.X, location.Y);

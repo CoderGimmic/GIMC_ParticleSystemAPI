@@ -57,14 +57,14 @@ namespace PS
 		owner->ParticleSetColor(*this, colorStart, colorEnd);
 	}
 
+	void Particle::SetSpeed(float speedMin, float speedMax, float speedChange, bool clampToZero)
+	{
+		owner->ParticleSetSpeed(*this, speedMin, speedMax, speedChange, clampToZero);
+	}
+
 	void Particle::SetDirection(float dirMin, float dirMax, float dirChange)
 	{
 		owner->ParticleSetDirection(*this, dirMin, dirMax, dirChange);
-	}
-
-	void Particle::SetSpeed(float speedMin, float speedMax, float speedChange)
-	{
-		owner->ParticleSetSpeed(*this, speedMin, speedMax, speedChange);
 	}
 
 	void Particle::SetVelocity(Vector2 velocity)
@@ -77,14 +77,24 @@ namespace PS
 		owner->ParticleSetGravity(*this, direction, strength);
 	}
 
-	void Particle::SetAttractorPoint(Vector2 position, float strength)
+	void Particle::SetAttractorPoint(Vector2 position, float strength, bool killOnCenter /* = false */)
 	{
-		owner->ParticleSetAttractorPoint(*this, position, strength);
+		owner->ParticleSetAttractorPoint(*this, position, strength, killOnCenter);
+	}
+
+	void Particle::SetAttractorRange(float range, bool linearFalloff /* = false */)
+	{
+		owner->ParticleSetAttractorRange(*this, range, linearFalloff);
 	}
 
 	void Particle::SetRotatorPoint(Vector2 position, bool useDegrees /* = true */)
 	{
 		owner->ParticleSetRotatorPoint(*this, position, useDegrees);
+	}
+
+	void Particle::SetRotatorRange(float range, bool linearFalloff)
+	{
+		owner->ParticleSetRotatorRange(*this, range, linearFalloff);
 	}
 
 	void Particle::SetSpawnedParticle(Particle& spawnedParticle, unsigned numberOfSpawnedParticles)
@@ -97,30 +107,35 @@ namespace PS
 		owner->ParticleSetCustomData(*this, data);
 	}
 
+	void Particle::Reset()
+	{
+		owner->ParticleReset(*this);
+	}
+
 	// Private
 
 	Particle::Particle()
-	{
-		Reset();
-	}
+	{}
 
 	Particle::Particle(ParticleSystem* system)
-	{
-		Reset();
-
-		owner = system;
-	}
-
-	void Particle::Reset()
-	{
-		owner = nullptr;
-		uniqueID = (unsigned)-1;
-		valid = false;
-	}
+		: valid(false)
+		, uniqueID((unsigned)-1)
+		, owner(system)
+	{}
 
 	/////////////////////////////////////////////////////////////////////
 	// Emitter
 	/////////////////////////////////////////////////////////////////////
+
+	void Emitter::Burst(unsigned spawnedParticlesOverride)
+	{
+		owner->EmitterBurst(*this, spawnedParticlesOverride);
+	}
+
+	void Emitter::SetFrequency(float frequency, unsigned spawnCount, bool spawnImmediately)
+	{
+		owner->EmitterSetFrequency(*this, frequency, spawnCount, spawnImmediately);
+	}
 
 	void Emitter::SetLocation(Vector2 location)
 	{
@@ -145,16 +160,6 @@ namespace PS
 	void Emitter::SetRim(float thickness)
 	{
 		owner->EmitterSetRim(*this, thickness);
-	}
-
-	void Emitter::SetFrequency(float frequency, unsigned spawnCount, bool spawnImmediately)
-	{
-		owner->EmitterSetFrequency(*this, frequency, spawnCount, spawnImmediately);
-	}
-
-	void Emitter::Burst(unsigned spawnedParticlesOverride)
-	{
-		owner->EmitterBurst(*this, spawnedParticlesOverride);
 	}
 
 	void Emitter::SetActive(bool state)
@@ -195,17 +200,7 @@ namespace PS
 	Vector2 Vector2::CreateUnit(float direction)
 	{
 		float angle = direction * Math::degToRad;
-		float x = cos(angle);
-		float y = sin(angle);
-
-		float hyp = sqrtf(x*x + y*y);
-		if (hyp > 0.0f)
-		{
-			x /= hyp;
-			y /= hyp;
-		}
-
-		return (Vector2(x, y));
+		return (Vector2(cos(angle), sin(angle)));
 	}
 
 	Vector2::Vector2(float x, float y)
@@ -599,32 +594,51 @@ namespace PS
 
 		scale = Vector2(1.0f, 1.0f);
 
+		// Size
 		sizeMin = 32.0f;
 		sizeMax = 32.0f;
 		sizeChange = 0.0f;
 
+		// Rotation
 		rotationRelative = false;
 		rotationMin = 0.0f;
 		rotationMax = 0.0f;
 		rotationChange = 0.0f;
 
-		dirMin = 0.0f;
-		dirMax = 0.0f;
-		dirChange = 0.0f;
-
-		speedMin = 0.0f;
-		speedMax = 0.0f;
-		speedChange = 0.0f;
-
-		velocity = Vector2(0.0f, 0.0f);
-		gravity = Vector2(0.0f, 0.0f);
-
+		// Color
 		colorDeltaH = 0.0f;
 		colorDeltaS = 0.0f;
 		colorDeltaL = 0.0f;
 		colorDeltaA = 0.0f;
 		colorStart = Color();
 		colorEnd = Color();
+
+		// Speed
+		speedMin = 0.0f;
+		speedMax = 0.0f;
+		speedChange = 0.0f;
+		speedClampToZero = false;
+
+		// Direction
+		dirMin = 0.0f;
+		dirMax = 0.0f;
+		dirChange = 0.0f;
+		
+		velocity = Vector2(0.0f, 0.0f);
+		gravity = Vector2(0.0f, 0.0f);
+
+		// Attractor
+		attractorPoint = Vector2(0.0f, 0.0f);
+		attractorStrength = 0.0f;
+		attractorKill = false;
+		attractorRange = FLT_MAX;
+		attractorLinearFalloff = false;
+
+		// Rotator
+		rotatorPoint = Vector2(0.0f, 0.0f);
+		rotatorUseDegrees = true;
+		rotatorRange = FLT_MAX;
+		rotatorLinearFalloff = false;
 
 		particle = (unsigned)-1;
 		particleSpawnCount = 0;
@@ -878,8 +892,23 @@ namespace PS
 		if (HasFlag(Flag_Color))
 			updateColor(output, deltaTime);
 
-		// Velocity
-		if (HasFlag(Flag_Velocity))
+		bool successfulRotation = false;
+		bool hasAlreadyUpdatedSpeed = false;
+
+		if (HasFlag(Flag_Rotator))
+		{
+			if (HasFlag(Flag_Speed)) // Rotation speed
+			{
+				output.locationData.speed() 
+					= updateSpeed(output.locationData.speed(), deltaTime);
+
+				hasAlreadyUpdatedSpeed = true;
+			}
+
+			successfulRotation = updateRotator(output, deltaTime);
+		}
+
+		if (!successfulRotation && HasFlag(Flag_Velocity)) // Velocity
 		{
 			if (HasFlag(Flag_ConstVelocity))
 			{
@@ -887,7 +916,7 @@ namespace PS
 			}
 			else
 			{
-				bool shouldUpdateSpeed = HasFlag(Flag_Speed);
+				bool shouldUpdateSpeed = HasFlag(Flag_Speed) && !hasAlreadyUpdatedSpeed;
 				bool shouldUpdateDirection = HasFlag(Flag_Direction);
 
 				ParticleOutput::LocationData locationData;
@@ -921,11 +950,8 @@ namespace PS
 		if (HasFlag(Flag_Gravity))
 			output.location += gravity * deltaTime;
 
-		if (HasFlag(Flag_AttractorPoint))
+		if (HasFlag(Flag_Attractor))
 			updateAttractor(output, deltaTime);
-
-		if (HasFlag(Flag_Rotator))
-			updateRotator(output, deltaTime);
 		
 		// Rotation
 		if (HasFlag(Flag_Rotation))
@@ -942,6 +968,16 @@ namespace PS
 		}
 
 		return(Result);
+	}
+
+	void ParticleSystem::ParticleDef::updateRotation(ParticleOutput& output, float deltaTime)
+	{
+		if (rotationRelative)
+			output.rotation = output.locationData.direction();
+		else
+		{
+			output.rotation += rotationChange * deltaTime;
+		}
 	}
 
 	void ParticleSystem::ParticleDef::updateColor(ParticleOutput& output,float deltaTime)
@@ -991,7 +1027,7 @@ namespace PS
 	{
 		float Result = currentSpeed + (speedChange * deltaTime);
 
-		if (Result < 0.0f)
+		if (speedClampToZero && Result < 0.0f)
 			Result = 0.0f;
 
 		return(Result);
@@ -1005,36 +1041,66 @@ namespace PS
 
 	void ParticleSystem::ParticleDef::updateAttractor(ParticleOutput& output, float deltaTime)
 	{
+		float radius = output.location.Distance(attractorPoint);
+
+		if (radius > attractorRange) // Out of range
+			return;
+
+		float effect = attractorLinearFalloff ? (1.0f - (radius / attractorRange)) : 1.0f;
+
 		Vector2 currentLocation = output.location;
 		Vector2 difference = attractorPoint - currentLocation;
+		if (attractorKill)
+		{
+			if (difference.Length() < 1.0f)
+			{
+				output.lifeRemaining = 0.0f;
+			}
+		}
 		difference.Normalize();
 
-		output.location += difference * attractStrength * deltaTime;
+		output.location += difference * attractorStrength * deltaTime * effect;
 	}
 
-	void ParticleSystem::ParticleDef::updateRotator(ParticleOutput& output, float deltaTime)
+	bool ParticleSystem::ParticleDef::updateRotator(ParticleOutput& output, float deltaTime)
 	{
+		float radius = output.location.Distance(rotatorPoint);
+
+		if (radius > rotatorRange) // Out of range
+			return false;
+
+		float effect = rotatorLinearFalloff ? (1.0f - (radius / rotatorRange)) : 1.0f;
+
 		float angle = atan2(
 			output.location.Y - rotatorPoint.Y, 
 			output.location.X - rotatorPoint.X);
 
 		angle *= Math::radToDeg;
 
-		angle += output.locationData.speed() * deltaTime;
-
-		float dist = output.location.Distance(rotatorPoint);
-
-		output.location = rotatorPoint + Vector2::CreateUnit(angle) * dist;
-	}
-
-	void ParticleSystem::ParticleDef::updateRotation(ParticleOutput& output, float deltaTime)
-	{
-		if (rotationRelative)
-			output.rotation = output.locationData.direction();
+		if (rotatorUseDegrees)
+		{
+			angle += output.locationData.speed() * deltaTime * effect;
+		}
 		else
 		{
-			output.rotation += rotationChange * deltaTime;
+			float circumference = radius * Math::PI2;
+			float oneDegreeLength = circumference / 360.0f;
+
+			float rimLocation = oneDegreeLength * angle;
+			float addition = output.locationData.speed() * deltaTime * effect;
+			rimLocation += addition;
+
+			if (rimLocation < 0)
+				rimLocation = circumference + rimLocation;
+			if (rimLocation >= circumference)
+				rimLocation -= circumference;
+
+			angle = rimLocation / oneDegreeLength;
 		}
+
+		output.location = rotatorPoint + Vector2::CreateUnit(angle) * radius;
+
+		return true;
 	}
 
 	bool ParticleSystem::ParticleDef::addParticle(Vector2 location)
@@ -1100,8 +1166,6 @@ namespace PS
 	// EmitterDef
 	/////////////////////////////////////////////////////////////////////
 
-	const float ParticleSystem::EmitterDef::PI_2 = 6.28318530717958647693f;
-
 	ParticleSystem::EmitterDef::EmitterDef()
 	{
 		Reset();
@@ -1149,7 +1213,7 @@ namespace PS
 
 				float minRadius = rim == 0.0f ? 0.0f : dimension.X - rim;
 
-				float angle = Random::betweenf(0.f, PI_2);
+				float angle = Random::betweenf(0.f, Math::PI2);
 				float radius = Random::betweenf(minRadius, dimension.X);
 
 				point.X = location.X + radius * cos(angle);
@@ -1222,20 +1286,14 @@ namespace PS
 	/////////////////////////////////////////////////////////////////////
 
 	ParticleSystem::ParticleSystem()
+		: particleDefinitions(nullptr)
 	{
-		Random::setRandomSeed();
-
-		numDefinitions = 0;
-		particleDefinitions = new ParticleDef[MAX_DEFINITIONS];
-
-		numParticles = 0;
-		numEmitters = 0;
+		Reset();
 	}
 
 	ParticleSystem::~ParticleSystem()
 	{
-		delete[] particleDefinitions;
-		particleDefinitions = nullptr;
+		CleanUp();
 	}
 
 	void ParticleSystem::Update(float deltaTime)
@@ -1377,6 +1435,19 @@ namespace PS
 		return numEmitters;
 	}
 
+	void ParticleSystem::Reset()
+	{
+		CleanUp();
+
+		Random::setRandomSeed();
+
+		numDefinitions = 0;
+		particleDefinitions = new ParticleDef[MAX_DEFINITIONS];
+
+		numParticles = 0;
+		numEmitters = 0;
+	}
+
 	// Private
 
 	void ParticleSystem::ParticleSetLifetime(Particle& particle, float minLife, float maxLife)
@@ -1481,6 +1552,20 @@ namespace PS
 		}
 	}
 
+	void ParticleSystem::ParticleSetSpeed(Particle& particle, float speedMin, float speedMax, float speedChange, bool clampToZero)
+	{
+		if (particle.valid == false)
+			return;
+
+		ParticleDef& def = particleDefinitions[particle.uniqueID];
+		def.speedMin = std::min(speedMin, speedMax);
+		def.speedMax = std::max(speedMin, speedMax);
+		def.speedChange = speedChange;
+		def.speedClampToZero = clampToZero;
+
+		def.CalcNewVelocityData();
+	}
+
 	void ParticleSystem::ParticleSetDirection(Particle& particle, float dirMin, float dirMax, float dirChange)
 	{
 		if (particle.valid == false)
@@ -1490,19 +1575,6 @@ namespace PS
 		def.dirMin = std::min(dirMin, dirMax);
 		def.dirMax = std::max(dirMin, dirMax);
 		def.dirChange = dirChange;
-
-		def.CalcNewVelocityData();
-	}
-
-	void ParticleSystem::ParticleSetSpeed(Particle& particle, float speedMin, float speedMax, float speedChange)
-	{
-		if (particle.valid == false)
-			return;
-
-		ParticleDef& def = particleDefinitions[particle.uniqueID];
-		def.speedMin = std::min(speedMin, speedMax);
-		def.speedMax = std::max(speedMin, speedMax);
-		def.speedChange = speedChange;
 
 		def.CalcNewVelocityData();
 	}
@@ -1538,23 +1610,37 @@ namespace PS
 		}
 	}
 
-	void ParticleSystem::ParticleSetAttractorPoint(Particle& particle, Vector2 position, float strength)
+	void ParticleSystem::ParticleSetAttractorPoint(Particle& particle, Vector2 position, float strength, bool destroyInCenter)
 	{
 		if (particle.valid == false)
 			return;
 
 		ParticleDef& def = particleDefinitions[particle.uniqueID];
 		def.attractorPoint = position;
-		def.attractStrength = strength;
+		def.attractorStrength = strength;
+		def.attractorKill = destroyInCenter;
 
 		if (strength != 0.0f)
 		{
-			def.AddFlag(Flag_AttractorPoint);
+			def.AddFlag(Flag_Attractor);
 		}
 		else
 		{
-			def.RemoveFlag(Flag_AttractorPoint);
+			def.RemoveFlag(Flag_Attractor);
 		}
+	}
+
+	void ParticleSystem::ParticleSetAttractorRange(Particle& particle, float range, bool linearfalloff /* = false */)
+	{
+		if (particle.valid == false)
+			return;
+
+		if (range <= 0.0f)
+			return;
+
+		ParticleDef& def = particleDefinitions[particle.uniqueID];
+		def.attractorRange = range;
+		def.attractorLinearFalloff = linearfalloff;
 	}
 
 	void ParticleSystem::ParticleSetRotatorPoint(Particle& particle, Vector2 position, bool useDegrees /* = true */)
@@ -1567,6 +1653,19 @@ namespace PS
 		def.rotatorUseDegrees = useDegrees;
 
 		def.AddFlag(Flag_Rotator);
+	}
+
+	void ParticleSystem::ParticleSetRotatorRange(Particle& particle, float range, bool useLinearFalloff)
+	{
+		if (particle.valid == false)
+			return;
+
+		if (range <= 0.0f)
+			return;
+
+		ParticleDef& def = particleDefinitions[particle.uniqueID];
+		def.rotatorRange = range;
+		def.rotatorLinearFalloff = useLinearFalloff;
 	}
 
 	void ParticleSystem::ParticleSetSpawnedParticle(Particle& particle, Particle spawnedParticle, unsigned numberOfSpawnedParticles)
@@ -1584,6 +1683,23 @@ namespace PS
 			return;
 
 		particleDefinitions[particle.uniqueID].customData = data;
+	}
+
+	void ParticleSystem::ParticleReset(Particle& particle)
+	{
+		if (particle.valid == false)
+			return;
+
+		particleDefinitions[particle.uniqueID].Reset();
+	}
+
+	void ParticleSystem::EmitterBurst(Emitter emitter, unsigned spawnedParticlesOverride)
+	{
+		if (emitter.valid == false)
+			return;
+
+		numParticles += particleDefinitions[emitter.particleID].Burst
+			(emitter.uniqueID, spawnedParticlesOverride);
 	}
 
 	void ParticleSystem::EmitterSetLocation(Emitter emitter, Vector2 location)
@@ -1656,15 +1772,6 @@ namespace PS
 		}
 	}
 
-	void ParticleSystem::EmitterBurst(Emitter emitter, unsigned spawnedParticlesOverride)
-	{
-		if (emitter.valid == false)
-			return;
-
-		numParticles += particleDefinitions[emitter.particleID].Burst
-			(emitter.uniqueID, spawnedParticlesOverride);
-	}
-
 	void ParticleSystem::EmitterSetActive(Emitter emitter, bool state)
 	{
 		ParticleDef& def = particleDefinitions[emitter.particleID];
@@ -1709,6 +1816,15 @@ namespace PS
 			return &particleDefinitions[0].particles[particleDefinitions[0].numParticles];
 
 		return &particleDefinitions[0].particles[particleIndex];
+	}
+
+	void ParticleSystem::CleanUp()
+	{
+		if (particleDefinitions != nullptr)
+		{
+			delete[] particleDefinitions;
+			particleDefinitions = nullptr;
+		}
 	}
 
 	/////////////////////////////////////////////////////////////////////
