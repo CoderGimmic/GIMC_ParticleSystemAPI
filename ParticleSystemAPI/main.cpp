@@ -11,6 +11,12 @@
 #include "SFML/Graphics/Sprite.hpp"
 
 #include "ParticleSystem.h"
+#include "Emitter.h"
+#include "Output.h"
+#include "Particle.h"
+#include "Color.h"
+#include "Vector2.h"
+#include "debug/EmitterDebug.h"
 
 #include "DebugGraph.h"
 

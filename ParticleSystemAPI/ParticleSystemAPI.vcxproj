@@ -89,13 +89,35 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Color.cpp" />
     <ClCompile Include="DebugGraph.cpp" />
+    <ClCompile Include="debug\EmitterDebug.cpp" />
+    <ClCompile Include="Emitter.cpp" />
+    <ClCompile Include="internal\EmitterDefinition.cpp" />
+    <ClCompile Include="internal\HSL.cpp" />
+    <ClCompile Include="internal\Math.cpp" />
+    <ClCompile Include="internal\ParticleDefinition.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Output.cpp" />
+    <ClCompile Include="Particle.cpp" />
     <ClCompile Include="ParticleSystem.cpp" />
+    <ClCompile Include="Vector2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DebugGraph.h" />
+    <ClInclude Include="debug\EmitterDebug.h" />
+    <ClInclude Include="Emitter.h" />
+    <ClInclude Include="internal\EmitterDefinition.h" />
+    <ClInclude Include="internal\HSL.h" />
+    <ClInclude Include="internal\Math.h" />
+    <ClInclude Include="internal\ParticleDefinition.h" />
+    <ClInclude Include="internal\SpawnedParticleContainer.h" />
+    <ClInclude Include="Output.h" />
+    <ClInclude Include="Particle.h" />
     <ClInclude Include="ParticleSystem.h" />
+    <ClInclude Include="Color.h" />
+    <ClInclude Include="Settings.h" />
+    <ClInclude Include="Vector2.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
