@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "debug\EmitterDebug.h"
+#include "debugging\EmitterDebug.h"
 
 #include "SpawnedParticleContainer.h"
 #include "EmitterDefinition.h"

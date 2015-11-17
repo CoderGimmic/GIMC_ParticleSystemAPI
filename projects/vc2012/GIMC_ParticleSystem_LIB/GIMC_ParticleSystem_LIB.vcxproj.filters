@@ -19,11 +19,11 @@
     <Filter Include="Source Files\internal">
       <UniqueIdentifier>{9ab726ac-535c-47b5-b8e3-eafea762e58a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\debug">
-      <UniqueIdentifier>{a1d7e9f5-ed5c-48e2-b139-bc322ca49a64}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\debug">
+    <Filter Include="Source Files\debugging">
       <UniqueIdentifier>{2d832be2-de37-4d02-8ef8-ff32a709c8b2}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\debugging">
+      <UniqueIdentifier>{a1d7e9f5-ed5c-48e2-b139-bc322ca49a64}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -63,8 +63,8 @@
     <ClCompile Include="..\..\..\src\GIMC\internal\ParticleDefinition.cpp">
       <Filter>Source Files\internal</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\..\src\GIMC\debug\EmitterDebug.cpp">
-      <Filter>Source Files\debug</Filter>
+    <ClCompile Include="..\..\..\src\GIMC\debugging\EmitterDebug.cpp">
+      <Filter>Source Files\debugging</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -104,8 +104,8 @@
     <ClInclude Include="..\..\..\include\GIMC\internal\SpawnedParticleContainer.h">
       <Filter>Header Files\internal</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\..\include\GIMC\debug\EmitterDebug.h">
-      <Filter>Header Files\debug</Filter>
+    <ClInclude Include="..\..\..\include\GIMC\debugging\EmitterDebug.h">
+      <Filter>Header Files\debugging</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

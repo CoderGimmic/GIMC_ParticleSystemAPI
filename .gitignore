@@ -70,3 +70,7 @@ packages/
 
 #Own extensions
 *.exe
+
+#Included folders
+!include/GIMC/debugging
+!src/GIMC/debugging

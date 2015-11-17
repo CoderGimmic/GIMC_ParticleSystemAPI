@@ -3,7 +3,7 @@
 #include "internal\ParticleDefinition.h"
 
 #include "internal/Math.h"
-#include "debug\EmitterDebug.h"
+#include "debugging\EmitterDebug.h"
 
 #include "Settings.h"
 #include "Output.h"
