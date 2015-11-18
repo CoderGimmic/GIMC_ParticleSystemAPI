@@ -10,8 +10,6 @@
 #include "SFML/Graphics/VertexArray.hpp"
 #include "SFML/Graphics/Sprite.hpp"
 
-#pragma comment(lib, "GIMC_ParticleSystem.lib")
-
 #include "ParticleSystem.h"
 #include "Emitter.h"
 #include "Output.h"
