@@ -1,5 +1,10 @@
-// main.cpp
+// GalaxyDemo.cpp
 
+// GIMC_ParticleSystem
+#include "GIMC_ParticleSystem.h"
+#include "debugging/EmitterDebug.h"
+
+// SFML Graphics API
 #include "SFML/Graphics/RenderWindow.hpp"
 #include "SFML/Window/Event.hpp"
 #include "SFML/System/Vector2.hpp"
@@ -10,14 +15,7 @@
 #include "SFML/Graphics/VertexArray.hpp"
 #include "SFML/Graphics/Sprite.hpp"
 
-#include "ParticleSystem.h"
-#include "Emitter.h"
-#include "Output.h"
-#include "Particle.h"
-#include "Color.h"
-#include "Vector2.h"
-#include "debugging/EmitterDebug.h"
-
+// GIMC_DebugTools
 #include "DebugGraph.h"
 
 #include <iostream>

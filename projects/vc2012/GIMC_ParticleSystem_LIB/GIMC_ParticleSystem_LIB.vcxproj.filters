@@ -107,5 +107,8 @@
     <ClInclude Include="..\..\..\include\GIMC\debugging\EmitterDebug.h">
       <Filter>Header Files\debugging</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\include\GIMC\GIMC_ParticleSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

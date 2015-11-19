@@ -108,6 +108,7 @@
     <ClInclude Include="..\..\..\include\GIMC\Color.h" />
     <ClInclude Include="..\..\..\include\GIMC\debugging\EmitterDebug.h" />
     <ClInclude Include="..\..\..\include\GIMC\Emitter.h" />
+    <ClInclude Include="..\..\..\include\GIMC\GIMC_ParticleSystem.h" />
     <ClInclude Include="..\..\..\include\GIMC\internal\EmitterDefinition.h" />
     <ClInclude Include="..\..\..\include\GIMC\internal\HSL.h" />
     <ClInclude Include="..\..\..\include\GIMC\internal\Math.h" />
