@@ -188,7 +188,7 @@ namespace GIMC
 	{
 		CleanUp();
 
-		Random::setRandomSeed();
+		internal::Random::setRandomSeed();
 
 		numDefinitions = 0;
 		particleDefinitions = new internal::ParticleDef[MAX_DEFINITIONS];

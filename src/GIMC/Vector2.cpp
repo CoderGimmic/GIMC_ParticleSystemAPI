@@ -19,7 +19,7 @@ namespace GIMC
 
 	Vector2 Vector2::CreateUnit(float direction)
 	{
-		float angle = direction * Math::degToRad;
+		float angle = direction * internal::Math::degToRad;
 		return (Vector2(cos(angle), sin(angle)));
 	}
 

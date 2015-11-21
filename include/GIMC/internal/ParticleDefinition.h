@@ -38,9 +38,6 @@ namespace GIMC
 
 		public:
 
-			ParticleDef();
-			~ParticleDef();
-
 			unsigned Reset();
 			int ProcessAll(float deltaTime, SpawnedParticleContainer& container);
 
@@ -57,6 +54,11 @@ namespace GIMC
 			bool HasFlag(EParticleFlags flag);
 
 			void CalcNewVelocityData();
+
+		private:
+
+			ParticleDef();
+			~ParticleDef();
 
 		public:
 

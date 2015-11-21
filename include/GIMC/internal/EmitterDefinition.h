@@ -12,6 +12,8 @@ namespace GIMC
 		class EmitterDef
 		{
 			friend class ParticleSystem;
+			friend class ParticleDef;
+
 		public:
 
 			void Reset();
@@ -20,9 +22,11 @@ namespace GIMC
 			void InitTimer();
 			void CalcRectRim();
 
-		public:
+		private:
 
 			EmitterDef();
+
+		public:
 
 			Vector2 location;
 			EmitterShape shape;

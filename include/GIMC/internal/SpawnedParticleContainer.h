@@ -11,13 +11,9 @@ namespace GIMC
 	{
 		struct SpawnedParticleContainer
 		{
-			Vector2 locations[MAX_SPAWNCOUNT];
-			unsigned size;
+			friend class ParticleSystem;
 
-			SpawnedParticleContainer::SpawnedParticleContainer()
-			{
-				size = 0;
-			}
+		public:
 
 			bool Add(Vector2 location)
 			{
@@ -29,6 +25,18 @@ namespace GIMC
 
 				return true;
 			}
+
+		private:
+
+			SpawnedParticleContainer::SpawnedParticleContainer()
+			{
+				size = 0;
+			}
+
+		public:
+
+			Vector2 locations[MAX_SPAWNCOUNT];
+			unsigned size;
 		};
 	};
 };
