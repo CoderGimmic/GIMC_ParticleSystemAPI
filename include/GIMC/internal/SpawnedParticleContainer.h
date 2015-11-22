@@ -13,6 +13,8 @@ namespace GIMC
 		{
 			friend class ParticleSystem;
 
+			static const unsigned MAX_SPAWNCOUNT = 50;
+
 		public:
 
 			bool Add(Vector2 location)
@@ -29,9 +31,8 @@ namespace GIMC
 		private:
 
 			SpawnedParticleContainer::SpawnedParticleContainer()
-			{
-				size = 0;
-			}
+				: size(0)
+			{}
 
 		public:
 

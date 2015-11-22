@@ -4,20 +4,16 @@
 
 namespace GIMC
 {
-	static const unsigned MAX_DEFINITIONS = 100;
-	static const unsigned MAX_PARTICLES = 10000;
-	static const unsigned MAX_EMITTERS = 100;
-	static const unsigned MAX_SPAWNCOUNT = 50;
-
-	namespace internal
+	struct ParticleSystemSettings
 	{
-		struct VersionInfo
-		{
-			unsigned major;
-			unsigned minor;
-			unsigned patch;
-		};
+		unsigned definitionLimit; ///< Maximum particle types allowed
+		unsigned particleLimit; ///< Maximum particles per type allowed
+		unsigned emitterLimitPerDefinition; ///< Maximum emitters types allowed
 
-		extern VersionInfo ParticleSystemVersion;
+		ParticleSystemSettings()
+			: definitionLimit(100)
+			, particleLimit(10000)
+			, emitterLimitPerDefinition(100)
+		{}
 	};
 };

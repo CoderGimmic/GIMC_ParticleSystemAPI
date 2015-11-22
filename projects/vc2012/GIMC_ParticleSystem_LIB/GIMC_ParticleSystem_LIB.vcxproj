@@ -101,8 +101,8 @@
     <ClCompile Include="..\..\..\src\GIMC\Output.cpp" />
     <ClCompile Include="..\..\..\src\GIMC\Particle.cpp" />
     <ClCompile Include="..\..\..\src\GIMC\ParticleSystem.cpp" />
-    <ClCompile Include="..\..\..\src\GIMC\Settings.cpp" />
     <ClCompile Include="..\..\..\src\GIMC\Vector2.cpp" />
+    <ClCompile Include="..\..\..\src\GIMC\Version.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\include\GIMC\Color.h" />
@@ -119,6 +119,7 @@
     <ClInclude Include="..\..\..\include\GIMC\ParticleSystem.h" />
     <ClInclude Include="..\..\..\include\GIMC\Settings.h" />
     <ClInclude Include="..\..\..\include\GIMC\Vector2.h" />
+    <ClInclude Include="..\..\..\include\GIMC\Version.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

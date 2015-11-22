@@ -17,16 +17,16 @@ namespace GIMC
 		, Y(0.0f)
 	{}
 
+	Vector2::Vector2(float x, float y)
+		: X(x)
+		, Y(y)
+	{}
+
 	Vector2 Vector2::CreateUnit(float direction)
 	{
 		float angle = direction * internal::Math::degToRad;
 		return (Vector2(cos(angle), sin(angle)));
 	}
-
-	Vector2::Vector2(float x, float y)
-		: X(x)
-		, Y(y)
-	{}
 
 	Vector2& Vector2::operator=(const Vector2& rhs)
 	{

@@ -12,6 +12,7 @@ namespace GIMC
 	{
 		Vector2();
 		Vector2(float x, float y);
+		
 		static Vector2 CreateUnit(float direction);
 
 		Vector2& operator=(const Vector2& rhs);

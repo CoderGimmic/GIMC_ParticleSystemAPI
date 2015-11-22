@@ -34,10 +34,24 @@ namespace GIMC
 	// ParticleSystem
 	/////////////////////////////////////////////////////////////////////
 
-	ParticleSystem::ParticleSystem()
+	const unsigned ParticleSystem::MAX_DEFINITIONS = 1000;
+
+	ParticleSystem::ParticleSystem(ParticleSystemSettings& settings)
 		: particleDefinitions(nullptr)
 	{
-		Reset();
+		definitionLimit = 
+			settings.definitionLimit > 
+			MAX_DEFINITIONS ? 
+			MAX_DEFINITIONS : 
+			settings.definitionLimit;
+
+		emitterLimit = 
+			settings.emitterLimitPerDefinition > 
+			internal::ParticleDef::MAX_EMITTERS ? 
+			internal::ParticleDef::MAX_EMITTERS :
+			settings.emitterLimitPerDefinition;
+
+		Reset(settings.particleLimit);
 	}
 
 	ParticleSystem::~ParticleSystem()
@@ -67,7 +81,7 @@ namespace GIMC
 	Particle ParticleSystem::CreateParticle()
 	{
 		Particle handle(this);
-		handle.valid = (numDefinitions < MAX_DEFINITIONS);
+		handle.valid = (numDefinitions < definitionLimit);
 		if (handle.valid)
 		{
 			handle.uniqueID = numDefinitions;
@@ -85,7 +99,7 @@ namespace GIMC
 		handle.particleID = spawnedParticle.uniqueID;
 
 		unsigned currentEmitterCount = particleDefinitions[handle.particleID].numEmitters;
-		handle.valid = (spawnedParticle.valid && currentEmitterCount < MAX_EMITTERS);
+		handle.valid = (spawnedParticle.valid && currentEmitterCount < emitterLimit);
 		if (handle.valid)
 		{
 			handle.uniqueID = currentEmitterCount;
@@ -184,14 +198,19 @@ namespace GIMC
 		return numEmitters;
 	}
 
-	void ParticleSystem::Reset()
+	void ParticleSystem::Reset(unsigned newParticleLimit)
 	{
 		CleanUp();
 
 		internal::Random::setRandomSeed();
 
 		numDefinitions = 0;
-		particleDefinitions = new internal::ParticleDef[MAX_DEFINITIONS];
+		particleDefinitions = new internal::ParticleDef[definitionLimit];
+
+		for (unsigned i = 0; i < definitionLimit; i++)
+		{
+			particleDefinitions[i].Init(newParticleLimit, emitterLimit);
+		}
 
 		numParticles = 0;
 		numEmitters = 0;

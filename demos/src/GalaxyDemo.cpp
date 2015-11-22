@@ -122,7 +122,12 @@ int main(int argc, const char* argv[])
 #define DRAW_ADD 1
 
 	sf::String textString("@");
-	GIMC::ParticleSystem partSystem;
+
+	GIMC::ParticleSystemSettings partSettings;
+	partSettings.particleLimit = 100;
+	partSettings.definitionLimit = 1000000;
+
+	GIMC::ParticleSystem partSystem(partSettings);
 
 	GIMC::Particle test = partSystem.CreateParticle();
 	

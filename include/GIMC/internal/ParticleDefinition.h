@@ -57,7 +57,8 @@ namespace GIMC
 
 		private:
 
-			ParticleDef();
+			void Init(unsigned newParticleLimit, unsigned newEmitterLimit);
+			ParticleDef() {};
 			~ParticleDef();
 
 		public:
@@ -134,13 +135,18 @@ namespace GIMC
 			unsigned short flagBits;
 
 			unsigned numParticles;
+			unsigned particleLimit;
 			ParticleOutput* particles;
 			unsigned numSpawnedParticles;
 			Vector2* spawnedParticles;
 
 			unsigned numEmitters;
+			unsigned emitterLimit;
 			EmitterDef* emitters;
 			bool* emitterActive;
+
+			static const unsigned MAX_PARTICLES;
+			static const unsigned MAX_EMITTERS;
 		};
 	};
 };

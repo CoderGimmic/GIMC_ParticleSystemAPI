@@ -5,6 +5,7 @@
 #include "internal/ParticleDefinition.h"
 
 #include "Particle.h"
+#include "Settings.h"
 
 ////////////////////////////////////////////////////////////
 //
@@ -31,7 +32,7 @@ namespace GIMC
 
 	public:
 
-		ParticleSystem();
+		ParticleSystem(ParticleSystemSettings& settings = ParticleSystemSettings());
 		~ParticleSystem();
 
 		void Update(float deltaTime);
@@ -53,7 +54,7 @@ namespace GIMC
 		unsigned GetEmitterTypeCount(unsigned particle);
 		unsigned GetEmitterCount();
 
-		void Reset();
+		void Reset(unsigned newParticleLimit);
 
 	private:
 
@@ -102,9 +103,13 @@ namespace GIMC
 	private:
 
 		unsigned numDefinitions;
+		unsigned definitionLimit;
 		internal::ParticleDef* particleDefinitions;
 
+		unsigned emitterLimit;
 		unsigned numParticles;
 		unsigned numEmitters;
+
+		static const unsigned MAX_DEFINITIONS;
 	};
 };

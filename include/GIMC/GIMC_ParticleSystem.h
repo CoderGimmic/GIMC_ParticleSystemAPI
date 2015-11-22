@@ -14,3 +14,4 @@
 #include "Color.h"
 
 #include "Settings.h"
+#include "Version.h"

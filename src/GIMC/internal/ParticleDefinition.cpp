@@ -16,8 +16,16 @@ namespace GIMC
 		// ParticleDef
 		/////////////////////////////////////////////////////////////////////
 
-		ParticleDef::ParticleDef()
+		const unsigned ParticleDef::MAX_PARTICLES = 10000;
+		const unsigned ParticleDef::MAX_EMITTERS = 100;
+
+		void ParticleDef::Init(unsigned newParticleLimit, unsigned newEmitterLimit)
 		{
+			particleLimit = 
+				newParticleLimit > MAX_PARTICLES ? MAX_PARTICLES : newParticleLimit;
+			emitterLimit = 
+				newEmitterLimit > MAX_EMITTERS ? MAX_EMITTERS : newEmitterLimit;
+
 			particles = new ParticleOutput[MAX_PARTICLES];
 			spawnedParticles = new Vector2[MAX_PARTICLES];
 			emitters = new EmitterDef[MAX_EMITTERS];
@@ -28,28 +36,40 @@ namespace GIMC
 
 		ParticleDef::~ParticleDef()
 		{
-			delete[] particles;
-			particles = nullptr;
+			if (particles)
+			{
+				delete[] particles;
+				particles = nullptr;
+			}
 
-			delete[] spawnedParticles;
-			spawnedParticles = nullptr;
+			if (spawnedParticles)
+			{
+				delete[] spawnedParticles;
+				spawnedParticles = nullptr;
+			}
 
-			delete[] emitters;
-			emitters = nullptr;
+			if (emitters)
+			{
+				delete[] emitters;
+				emitters = nullptr;
+			}
 
-			delete[] emitterActive;
-			emitterActive = nullptr;
+			if (emitterActive)
+			{
+				delete[] emitterActive;
+				emitterActive = nullptr;
+			}
 		}
 
 		unsigned ParticleDef::Reset()
 		{
-			for (unsigned i = 0; i < MAX_PARTICLES; i++)
+			for (unsigned i = 0; i < particleLimit; i++)
 			{
 				particles[i] = ParticleOutput();
 				spawnedParticles[i] = Vector2();
 			}
 
-			for (unsigned i = 0; i < MAX_EMITTERS; i++)
+			for (unsigned i = 0; i < emitterLimit; i++)
 			{
 				emitters[i] = EmitterDef();
 				emitterActive[i] = true;
@@ -218,7 +238,7 @@ namespace GIMC
 
 		void ParticleDef::SpawnParticle(Vector2 location)
 		{
-			if (numSpawnedParticles < MAX_PARTICLES)
+			if (numSpawnedParticles < particleLimit)
 			{
 				spawnedParticles[numSpawnedParticles] = location;
 				numSpawnedParticles++;
@@ -571,7 +591,7 @@ namespace GIMC
 
 		bool ParticleDef::addParticle(Vector2 location)
 		{
-			if (numParticles >= MAX_PARTICLES)
+			if (numParticles >= particleLimit)
 				return false;
 
 			unsigned slot = numParticles;

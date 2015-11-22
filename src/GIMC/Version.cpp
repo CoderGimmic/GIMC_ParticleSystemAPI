@@ -1,6 +1,6 @@
-// Settings.cpp
+// Version.cpp
 
-#include "Settings.h"
+#include "Version.h"
 
 namespace GIMC
 {
