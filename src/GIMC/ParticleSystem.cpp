@@ -218,25 +218,19 @@ namespace GIMC
 
 	// Private
 
-	void ParticleSystem::ParticleSetLifetime(Particle& particle, float minLife, float maxLife)
+	void ParticleSystem::ParticleSetLifetime(unsigned particleID, float minLife, float maxLife)
 	{
-		if (particle.valid == false)
-			return;
-
 		if (minLife == 0.0f && maxLife == 0.0f)
 			return;
 
-		internal::ParticleDef& def = particleDefinitions[particle.uniqueID];
+		internal::ParticleDef& def = particleDefinitions[particleID];
 		def.minLife = std::min(minLife, maxLife);
 		def.maxLife = std::max(minLife, maxLife);
 	}
 
-	void ParticleSystem::ParticleSetSize(Particle& particle, float sizeMin, float sizeMax, float sizeChange)
+	void ParticleSystem::ParticleSetSize(unsigned particleID, float sizeMin, float sizeMax, float sizeChange)
 	{
-		if (particle.valid == false)
-			return;
-
-		internal::ParticleDef& def = particleDefinitions[particle.uniqueID];
+		internal::ParticleDef& def = particleDefinitions[particleID];
 		def.sizeMin = std::min(sizeMin, sizeMax);
 		def.sizeMax = std::max(sizeMin, sizeMax);
 		def.sizeChange = sizeChange;
@@ -247,12 +241,9 @@ namespace GIMC
 		}
 	}
 
-	void ParticleSystem::ParticleSetRotation(Particle& particle, float rotMin, float rotMax, float rotChange, bool rotRelative)
+	void ParticleSystem::ParticleSetRotation(unsigned particleID, float rotMin, float rotMax, float rotChange, bool rotRelative)
 	{
-		if (particle.valid == false)
-			return;
-
-		internal::ParticleDef& def = particleDefinitions[particle.uniqueID];
+		internal::ParticleDef& def = particleDefinitions[particleID];
 		def.rotationMin = std::min(rotMin, rotMax);
 		def.rotationMax = std::max(rotMin, rotMax);
 		def.rotationChange = rotChange;
@@ -264,21 +255,15 @@ namespace GIMC
 		}
 	}
 
-	void ParticleSystem::ParticleSetScale(Particle& particle, float scaleX, float scaleY)
+	void ParticleSystem::ParticleSetScale(unsigned particleID, float scaleX, float scaleY)
 	{
-		if (particle.valid == false)
-			return;
-
-		internal::ParticleDef& def = particleDefinitions[particle.uniqueID];
+		internal::ParticleDef& def = particleDefinitions[particleID];
 		def.scale = Vector2(scaleX, scaleY);
 	}
 
-	void ParticleSystem::ParticleSetColor(Particle& particle, Color colorStart, Color colorEnd)
+	void ParticleSystem::ParticleSetColor(unsigned particleID, Color colorStart, Color colorEnd)
 	{
-		if (particle.valid == false)
-			return;
-
-		internal::ParticleDef& def = particleDefinitions[particle.uniqueID];
+		internal::ParticleDef& def = particleDefinitions[particleID];
 		def.colorStart = internal::HSL(colorStart);
 		def.colorEnd = internal::HSL(colorEnd);
 		def.colorStartAlpha = (float)colorStart.A;
@@ -320,12 +305,9 @@ namespace GIMC
 		}
 	}
 
-	void ParticleSystem::ParticleSetSpeed(Particle& particle, float speedMin, float speedMax, float speedChange, bool clampToZero)
+	void ParticleSystem::ParticleSetSpeed(unsigned particleID, float speedMin, float speedMax, float speedChange, bool clampToZero)
 	{
-		if (particle.valid == false)
-			return;
-
-		internal::ParticleDef& def = particleDefinitions[particle.uniqueID];
+		internal::ParticleDef& def = particleDefinitions[particleID];
 		def.speedMin = std::min(speedMin, speedMax);
 		def.speedMax = std::max(speedMin, speedMax);
 		def.speedChange = speedChange;
@@ -334,12 +316,9 @@ namespace GIMC
 		def.CalcNewVelocityData();
 	}
 
-	void ParticleSystem::ParticleSetDirection(Particle& particle, float dirMin, float dirMax, float dirChange)
+	void ParticleSystem::ParticleSetDirection(unsigned particleID, float dirMin, float dirMax, float dirChange)
 	{
-		if (particle.valid == false)
-			return;
-
-		internal::ParticleDef& def = particleDefinitions[particle.uniqueID];
+		internal::ParticleDef& def = particleDefinitions[particleID];
 		def.dirMin = std::min(dirMin, dirMax);
 		def.dirMax = std::max(dirMin, dirMax);
 		def.dirChange = dirChange;
@@ -347,12 +326,9 @@ namespace GIMC
 		def.CalcNewVelocityData();
 	}
 
-	void ParticleSystem::ParticleSetVelocity(Particle& particle, Vector2 velocity)
+	void ParticleSystem::ParticleSetVelocity(unsigned particleID, Vector2 velocity)
 	{
-		if (particle.valid == false)
-			return;
-
-		internal::ParticleDef& def = particleDefinitions[particle.uniqueID];
+		internal::ParticleDef& def = particleDefinitions[particleID];
 		def.velocity = velocity;
 
 		if (velocity != Vector2(0.0f, 0.0f))
@@ -364,12 +340,9 @@ namespace GIMC
 		}
 	}
 
-	void ParticleSystem::ParticleSetGravity(Particle& particle, float direction, float strength)
+	void ParticleSystem::ParticleSetGravity(unsigned particleID, float direction, float strength)
 	{
-		if (particle.valid == false)
-			return;
-
-		internal::ParticleDef& def = particleDefinitions[particle.uniqueID];
+		internal::ParticleDef& def = particleDefinitions[particleID];
 		def.gravity = Vector2::CreateUnit(direction) * strength;
 
 		if (def.gravity != Vector2(0.0f, 0.0f))
@@ -378,12 +351,9 @@ namespace GIMC
 		}
 	}
 
-	void ParticleSystem::ParticleSetAttractorPoint(Particle& particle, Vector2 position, float strength, bool destroyInCenter)
+	void ParticleSystem::ParticleSetAttractorPoint(unsigned particleID, Vector2 position, float strength, bool destroyInCenter)
 	{
-		if (particle.valid == false)
-			return;
-
-		internal::ParticleDef& def = particleDefinitions[particle.uniqueID];
+		internal::ParticleDef& def = particleDefinitions[particleID];
 		def.attractorPoint = position;
 		def.attractorStrength = strength;
 		def.attractorKill = destroyInCenter;
@@ -398,140 +368,60 @@ namespace GIMC
 		}
 	}
 
-	void ParticleSystem::ParticleSetAttractorRange(Particle& particle, float range, bool linearfalloff /* = false */)
+	void ParticleSystem::ParticleSetAttractorRange(unsigned particleID, float range, bool linearfalloff /* = false */)
 	{
-		if (particle.valid == false)
-			return;
-
 		if (range <= 0.0f)
 			return;
 
-		internal::ParticleDef& def = particleDefinitions[particle.uniqueID];
+		internal::ParticleDef& def = particleDefinitions[particleID];
 		def.attractorRange = range;
 		def.attractorLinearFalloff = linearfalloff;
 	}
 
-	void ParticleSystem::ParticleSetRotatorPoint(Particle& particle, Vector2 position, bool useDegrees /* = true */)
+	void ParticleSystem::ParticleSetRotatorPoint(unsigned particleID, Vector2 position, bool useDegrees /* = true */)
 	{
-		if (particle.valid == false)
-			return;
-
-		internal::ParticleDef& def = particleDefinitions[particle.uniqueID];
+		internal::ParticleDef& def = particleDefinitions[particleID];
 		def.rotatorPoint = position;
 		def.rotatorUseDegrees = useDegrees;
 
 		def.AddFlag(internal::Flag_Rotator);
 	}
 
-	void ParticleSystem::ParticleSetRotatorRange(Particle& particle, float range, bool useLinearFalloff)
+	void ParticleSystem::ParticleSetRotatorRange(unsigned particleID, float range, bool useLinearFalloff)
 	{
-		if (particle.valid == false)
-			return;
-
 		if (range <= 0.0f)
 			return;
 
-		internal::ParticleDef& def = particleDefinitions[particle.uniqueID];
+		internal::ParticleDef& def = particleDefinitions[particleID];
 		def.rotatorRange = range;
 		def.rotatorLinearFalloff = useLinearFalloff;
 	}
 
-	void ParticleSystem::ParticleSetSpawnedParticle(Particle& particle, Particle spawnedParticle, unsigned numberOfSpawnedParticles)
+	void ParticleSystem::ParticleSetSpawnedParticle(unsigned particleID, unsigned spawnedParticleID, unsigned numberOfSpawnedParticles)
 	{
-		if (particle.valid == false)
-			return;
-
-		particleDefinitions[particle.uniqueID].particle = spawnedParticle.uniqueID;
-		particleDefinitions[particle.uniqueID].particleSpawnCount = numberOfSpawnedParticles;
+		particleDefinitions[particleID].particle = spawnedParticleID;
+		particleDefinitions[particleID].particleSpawnCount = numberOfSpawnedParticles;
 	}
 
-	void ParticleSystem::ParticleSetCustomData(Particle& particle, void* data)
+	void ParticleSystem::ParticleSetCustomData(unsigned particleID, void* data)
 	{
-		if (particle.valid == false)
-			return;
-
-		particleDefinitions[particle.uniqueID].customData = data;
+		particleDefinitions[particleID].customData = data;
 	}
 
-	void ParticleSystem::ParticleReset(Particle& particle)
+	void ParticleSystem::ParticleReset(unsigned particleID)
 	{
-		if (particle.valid == false)
-			return;
-
-		particleDefinitions[particle.uniqueID].Reset();
+		particleDefinitions[particleID].Reset();
 	}
 
-	void ParticleSystem::EmitterBurst(Emitter emitter, unsigned spawnedParticlesOverride)
+	void ParticleSystem::EmitterBurst(unsigned emitterID, unsigned particleID, unsigned spawnedParticlesOverride)
 	{
-		if (emitter.valid == false)
-			return;
-
-		numParticles += particleDefinitions[emitter.particleID].Burst
-			(emitter.uniqueID, spawnedParticlesOverride);
+		numParticles += particleDefinitions[particleID].Burst
+			(emitterID, spawnedParticlesOverride);
 	}
 
-	void ParticleSystem::EmitterSetLocation(Emitter emitter, Vector2 location)
+	void ParticleSystem::EmitterSetFrequency(unsigned emitterID, unsigned particleID, float frequency, unsigned spawnCount, bool spawnImmediately)
 	{
-		if (emitter.valid == false)
-			return;
-
-		internal::EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
-		def.location = location;
-	}
-
-	void ParticleSystem::EmitterSetPoint(Emitter emitter, Vector2 location)
-	{
-		if (emitter.valid == false)
-			return;
-
-		internal::EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
-		def.shape = EmitterShape::POINT;
-		def.location = location;
-	}
-
-	void ParticleSystem::EmitterSetCircle(Emitter emitter, float radius, Vector2 location)
-	{
-		if (emitter.valid == false)
-			return;
-
-		internal::EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
-		def.shape = EmitterShape::CIRCLE;
-		def.location = location;
-		def.dimension = Vector2(radius, radius);
-	}
-
-	void ParticleSystem::EmitterSetRectangle(Emitter emitter, Vector2 dimension, Vector2 location)
-	{
-		if (emitter.valid == false)
-			return;
-
-		internal::EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
-
-		def.shape = EmitterShape::RECTANGLE;
-		def.location = location;
-		def.dimension = dimension;
-
-		def.CalcRectRim();
-	}
-
-	void ParticleSystem::EmitterSetRim(Emitter emitter, float thickness)
-	{
-		if (emitter.valid == false)
-			return;
-
-		internal::EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
-
-		def.rim = thickness;
-
-		def.CalcRectRim();
-	}
-
-	void ParticleSystem::EmitterSetFrequency(Emitter emitter, float frequency, unsigned spawnCount, bool spawnImmediately)
-	{
-		if (emitter.valid == false)
-			return;
-
-		internal::EmitterDef& def = particleDefinitions[emitter.particleID].emitters[emitter.uniqueID];
+		internal::EmitterDef& def = particleDefinitions[particleID].emitters[emitterID];
 		def.frequency = frequency;
 		def.particleCount = spawnCount;
 		if (spawnImmediately)
@@ -540,11 +430,52 @@ namespace GIMC
 		}
 	}
 
-	void ParticleSystem::EmitterSetActive(Emitter emitter, bool state)
+	void ParticleSystem::EmitterSetLocation(unsigned emitterID, unsigned particleID, Vector2 location)
 	{
-		internal::ParticleDef& def = particleDefinitions[emitter.particleID];
+		internal::EmitterDef& def = particleDefinitions[particleID].emitters[emitterID];
+		def.location = location;
+	}
 
-		def.emitterActive[emitter.uniqueID] = state;
+	void ParticleSystem::EmitterSetPoint(unsigned emitterID, unsigned particleID, Vector2 location)
+	{
+		internal::EmitterDef& def = particleDefinitions[particleID].emitters[emitterID];
+		def.shape = EmitterShape::POINT;
+		def.location = location;
+	}
+
+	void ParticleSystem::EmitterSetCircle(unsigned emitterID, unsigned particleID, float radius, Vector2 location)
+	{
+		internal::EmitterDef& def = particleDefinitions[particleID].emitters[emitterID];
+		def.shape = EmitterShape::CIRCLE;
+		def.location = location;
+		def.dimension = Vector2(radius, radius);
+	}
+
+	void ParticleSystem::EmitterSetRectangle(unsigned emitterID, unsigned particleID, Vector2 dimension, Vector2 location)
+	{
+		internal::EmitterDef& def = particleDefinitions[particleID].emitters[emitterID];
+
+		def.shape = EmitterShape::RECTANGLE;
+		def.location = location;
+		def.dimension = dimension;
+
+		def.CalcRectRim();
+	}
+
+	void ParticleSystem::EmitterSetRim(unsigned emitterID, unsigned particleID, float thickness)
+	{
+		internal::EmitterDef& def = particleDefinitions[particleID].emitters[emitterID];
+
+		def.rim = thickness;
+
+		def.CalcRectRim();
+	}
+
+	void ParticleSystem::EmitterSetActive(unsigned emitterID, unsigned particleID, bool state)
+	{
+		internal::ParticleDef& def = particleDefinitions[particleID];
+
+		def.emitterActive[emitterID] = state;
 	}
 
 	internal::ParticleDef* ParticleSystem::getDefinitionFromIndexParticles(unsigned& index)

@@ -124,8 +124,7 @@ int main(int argc, const char* argv[])
 	sf::String textString("@");
 
 	GIMC::ParticleSystemSettings partSettings;
-	partSettings.particleLimit = 100;
-	partSettings.definitionLimit = 1000000;
+	//partSettings.particleLimit = 500;
 
 	GIMC::ParticleSystem partSystem(partSettings);
 

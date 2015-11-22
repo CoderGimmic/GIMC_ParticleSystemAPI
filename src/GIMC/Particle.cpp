@@ -13,87 +13,141 @@ namespace GIMC
 
 	void Particle::SetLifetime(float minLife, float maxLife)
 	{
-		owner->ParticleSetLifetime(*this, minLife, maxLife);
+		if (valid == false)
+			return;
+
+		owner->ParticleSetLifetime(uniqueID, minLife, maxLife);
 	}
 
 	void Particle::SetSize(float sizeMin, float sizeMax, float sizeChange)
 	{
-		owner->ParticleSetSize(*this, sizeMin, sizeMax, sizeChange);
+		if (valid == false)
+			return;
+
+		owner->ParticleSetSize(uniqueID, sizeMin, sizeMax, sizeChange);
 	}
 
 	void Particle::SetRotation(float rotMin, float rotMax, float rotChange, bool rotRelative)
 	{
-		owner->ParticleSetRotation(*this, rotMin, rotMax, rotChange, rotRelative);
+		if (valid == false)
+			return;
+
+		owner->ParticleSetRotation(uniqueID, rotMin, rotMax, rotChange, rotRelative);
 	}
 
 	void Particle::SetScale(float scaleX, float scaleY)
 	{
-		owner->ParticleSetScale(*this, scaleX, scaleY);
+		if (valid == false)
+			return;
+
+		owner->ParticleSetScale(uniqueID, scaleX, scaleY);
 	}
 
 	void Particle::SetColor(Color color)
 	{
-		owner->ParticleSetColor(*this, color, color);
+		if (valid == false)
+			return;
+
+		owner->ParticleSetColor(uniqueID, color, color);
 	}
 
 	void Particle::SetColor(Color colorStart, Color colorEnd)
 	{
-		owner->ParticleSetColor(*this, colorStart, colorEnd);
+		if (valid == false)
+			return;
+
+		owner->ParticleSetColor(uniqueID, colorStart, colorEnd);
 	}
 
 	void Particle::SetSpeed(float speedMin, float speedMax, float speedChange, bool clampToZero)
 	{
-		owner->ParticleSetSpeed(*this, speedMin, speedMax, speedChange, clampToZero);
+		if (valid == false)
+			return;
+
+		owner->ParticleSetSpeed(uniqueID, speedMin, speedMax, speedChange, clampToZero);
 	}
 
 	void Particle::SetDirection(float dirMin, float dirMax, float dirChange)
 	{
-		owner->ParticleSetDirection(*this, dirMin, dirMax, dirChange);
+		if (valid == false)
+			return;
+
+		owner->ParticleSetDirection(uniqueID, dirMin, dirMax, dirChange);
 	}
 
 	void Particle::SetVelocity(Vector2 velocity)
 	{
-		owner->ParticleSetVelocity(*this, velocity);
+		if (valid == false)
+			return;
+
+		owner->ParticleSetVelocity(uniqueID, velocity);
 	}
 
 	void Particle::SetGravity(float direction, float strength)
 	{
-		owner->ParticleSetGravity(*this, direction, strength);
+		if (valid == false)
+			return;
+
+		owner->ParticleSetGravity(uniqueID, direction, strength);
 	}
 
 	void Particle::SetAttractorPoint(Vector2 position, float strength, bool killOnCenter /* = false */)
 	{
-		owner->ParticleSetAttractorPoint(*this, position, strength, killOnCenter);
+		if (valid == false)
+			return;
+
+		owner->ParticleSetAttractorPoint(uniqueID, position, strength, killOnCenter);
 	}
 
 	void Particle::SetAttractorRange(float range, bool linearFalloff /* = false */)
 	{
-		owner->ParticleSetAttractorRange(*this, range, linearFalloff);
+		if (valid == false)
+			return;
+
+		owner->ParticleSetAttractorRange(uniqueID, range, linearFalloff);
 	}
 
 	void Particle::SetRotatorPoint(Vector2 position, bool useDegrees /* = true */)
 	{
-		owner->ParticleSetRotatorPoint(*this, position, useDegrees);
+		if (valid == false)
+			return;
+
+		owner->ParticleSetRotatorPoint(uniqueID, position, useDegrees);
 	}
 
 	void Particle::SetRotatorRange(float range, bool linearFalloff)
 	{
-		owner->ParticleSetRotatorRange(*this, range, linearFalloff);
+		if (valid == false)
+			return;
+
+		owner->ParticleSetRotatorRange(uniqueID, range, linearFalloff);
 	}
 
 	void Particle::SetSpawnedParticle(Particle& spawnedParticle, unsigned numberOfSpawnedParticles)
 	{
-		owner->ParticleSetSpawnedParticle(*this, spawnedParticle, numberOfSpawnedParticles);
+		if (valid == false)
+			return;
+
+		if (spawnedParticle.valid == false)
+			return;
+
+		owner->ParticleSetSpawnedParticle(uniqueID, spawnedParticle.uniqueID, numberOfSpawnedParticles);
 	}
 
 	void Particle::SetCustomData(void* data)
 	{
-		owner->ParticleSetCustomData(*this, data);
+		if (valid == false)
+			return;
+
+		owner->ParticleSetCustomData(uniqueID, data);
 	}
 
 	void Particle::Reset()
 	{
-		owner->ParticleReset(*this);
+		if (valid == false)
+			return;
+
+		owner->ParticleReset(uniqueID);
 	}
 
 	// Private

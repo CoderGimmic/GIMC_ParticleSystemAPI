@@ -58,41 +58,41 @@ namespace GIMC
 
 	private:
 
-		void ParticleSetLifetime(Particle& particle, float minLife, float maxLife);
+		void ParticleSetLifetime(unsigned particle, float minLife, float maxLife);
 		
-		void ParticleSetSize(Particle& particle, float sizeMin, float sizeMax, float sizeChange = 0.0f);
-		void ParticleSetRotation(Particle& particle, float rotMin, float rotMax, float rotChange = 0.0f, bool rotRelative = false);
-		void ParticleSetScale(Particle& particle, float scaleX, float scaleY);
+		void ParticleSetSize(unsigned particleID, float sizeMin, float sizeMax, float sizeChange = 0.0f);
+		void ParticleSetRotation(unsigned particleID, float rotMin, float rotMax, float rotChange = 0.0f, bool rotRelative = false);
+		void ParticleSetScale(unsigned particleID, float scaleX, float scaleY);
 		
-		void ParticleSetColor(Particle& particle, Color colorStart, Color colorEnd);
+		void ParticleSetColor(unsigned particleID, Color colorStart, Color colorEnd);
 		
-		void ParticleSetSpeed(Particle& particle, float speedMin, float speedMax, float speedChange = 0.0f, bool clampToZero = false);
-		void ParticleSetDirection(Particle& particle, float dirMin, float dirMax, float dirChange = 0.0f);
-		void ParticleSetVelocity(Particle& particle, Vector2 velocity);
-		void ParticleSetGravity(Particle& particle, float direction, float strength);
+		void ParticleSetSpeed(unsigned particleID, float speedMin, float speedMax, float speedChange = 0.0f, bool clampToZero = false);
+		void ParticleSetDirection(unsigned particleID, float dirMin, float dirMax, float dirChange = 0.0f);
+		void ParticleSetVelocity(unsigned particleID, Vector2 velocity);
+		void ParticleSetGravity(unsigned particleID, float direction, float strength);
 		
-		void ParticleSetAttractorPoint(Particle& particle, Vector2 position, float strength, bool killOnCenter = false);
-		void ParticleSetAttractorRange(Particle& particle, float range, bool linearfalloff = false);
+		void ParticleSetAttractorPoint(unsigned particleID, Vector2 position, float strength, bool killOnCenter = false);
+		void ParticleSetAttractorRange(unsigned particleID, float range, bool linearfalloff = false);
 		
-		void ParticleSetRotatorPoint(Particle& particle, Vector2 position, bool useDegrees = true);
-		void ParticleSetRotatorRange(Particle& particle, float range, bool linearFallof = false);
+		void ParticleSetRotatorPoint(unsigned particleID, Vector2 position, bool useDegrees = true);
+		void ParticleSetRotatorRange(unsigned particleID, float range, bool linearFallof = false);
 		
-		void ParticleSetSpawnedParticle(Particle& particle, Particle spawnedParticle, unsigned numberOfSpawnedParticles = 1);
-		void ParticleSetCustomData(Particle& particle, void* data);
+		void ParticleSetSpawnedParticle(unsigned particleID, unsigned spawnedParticleID, unsigned numberOfSpawnedParticles = 1);
+		void ParticleSetCustomData(unsigned particleID, void* data);
 
-		void ParticleReset(Particle& particle);
+		void ParticleReset(unsigned particleID);
 
-		void EmitterBurst(Emitter emitter, unsigned spawnedParticlesOverride = (unsigned)-1);
+		void EmitterBurst(unsigned emitterID, unsigned particleID, unsigned spawnedParticlesOverride = (unsigned)-1);
 
-		void EmitterSetFrequency(Emitter emitter, float frequency, unsigned spawnCount = 1, bool spawnImmediately = false);
+		void EmitterSetFrequency(unsigned emitterID, unsigned particleID, float frequency, unsigned spawnCount = 1, bool spawnImmediately = false);
 		
-		void EmitterSetLocation(Emitter emitter, Vector2 location);
-		void EmitterSetPoint(Emitter emitter, Vector2 location);
-		void EmitterSetCircle(Emitter emitter, float radius, Vector2 location);
-		void EmitterSetRectangle(Emitter emitter, Vector2 dimension, Vector2 location);
-		void EmitterSetRim(Emitter, float thickness);
+		void EmitterSetLocation(unsigned emitterID, unsigned particleID, Vector2 location);
+		void EmitterSetPoint(unsigned emitterID, unsigned particleID, Vector2 location);
+		void EmitterSetCircle(unsigned emitterID, unsigned particleID, float radius, Vector2 location);
+		void EmitterSetRectangle(unsigned emitterID, unsigned particleID, Vector2 dimension, Vector2 location);
+		void EmitterSetRim(unsigned emitterID, unsigned particleID, float thickness);
 		
-		void EmitterSetActive(Emitter emitter, bool state);
+		void EmitterSetActive(unsigned emitterID, unsigned particleID, bool state);
 
 		internal::ParticleDef* getDefinitionFromIndexParticles(unsigned& index);
 		internal::ParticleDef* getDefenitionFromIndexEmitters(unsigned& index);

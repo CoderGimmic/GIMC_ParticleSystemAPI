@@ -12,42 +12,66 @@ namespace GIMC
 
 	void Emitter::Burst(unsigned spawnedParticlesOverride)
 	{
-		owner->EmitterBurst(*this, spawnedParticlesOverride);
+		if (valid == false)
+			return;
+
+		owner->EmitterBurst(uniqueID, particleID, spawnedParticlesOverride);
 	}
 
 	void Emitter::SetFrequency(float frequency, unsigned spawnCount, bool spawnImmediately)
 	{
-		owner->EmitterSetFrequency(*this, frequency, spawnCount, spawnImmediately);
+		if (valid == false)
+			return;
+
+		owner->EmitterSetFrequency(uniqueID, particleID, frequency, spawnCount, spawnImmediately);
 	}
 
 	void Emitter::SetLocation(Vector2 location)
 	{
-		owner->EmitterSetLocation(*this, location);
+		if (valid == false)
+			return;
+
+		owner->EmitterSetLocation(uniqueID, particleID, location);
 	}
 
 	void Emitter::SetPoint(Vector2 location)
 	{
-		owner->EmitterSetPoint(*this, location);
+		if (valid == false)
+			return;
+
+		owner->EmitterSetPoint(uniqueID, particleID, location);
 	}
 
 	void Emitter::SetCircle(float radius, Vector2 location)
 	{
-		owner->EmitterSetCircle(*this, radius, location);
+		if (valid == false)
+			return;
+
+		owner->EmitterSetCircle(uniqueID, particleID, radius, location);
 	}
 
 	void Emitter::SetRectangle(Vector2 dimension, Vector2 location)
 	{
-		owner->EmitterSetRectangle(*this, dimension, location);
+		if (valid == false)
+			return;
+
+		owner->EmitterSetRectangle(uniqueID, particleID, dimension, location);
 	}
 
 	void Emitter::SetRim(float thickness)
 	{
-		owner->EmitterSetRim(*this, thickness);
+		if (valid == false)
+			return;
+
+		owner->EmitterSetRim(uniqueID, particleID, thickness);
 	}
 
 	void Emitter::SetActive(bool state)
 	{
-		owner->EmitterSetActive(*this, state);
+		if (valid == false)
+			return;
+
+		owner->EmitterSetActive(uniqueID, particleID, state);
 	}
 
 	// Private
