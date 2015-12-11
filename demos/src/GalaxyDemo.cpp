@@ -21,6 +21,10 @@
 #include <iostream>
 #include <string>
 
+#ifdef _WIN32
+#include <Windows.h>
+#endif
+
 //#include <vld.h>
 
 float deltaTime = 0.0f;
@@ -48,7 +52,7 @@ struct ParticleCustomData
 		Square,
 	};
 
-	ParticleCustomData::ParticleCustomData(EParticleType _type, void* _data)
+	ParticleCustomData(EParticleType _type, void* _data)
 		: data(_data)
 		, type(_type)
 	{}
@@ -73,18 +77,29 @@ int main(int argc, const char* argv[])
 	window.setMouseCursorVisible(mouseVisible);
 	window.setFramerateLimit(60);
 
+	std::string debugPathPrefix = "..";
+
+#ifdef _WIN32
+
+	if (IsDebuggerPresent() != FALSE)
+	{
+		debugPathPrefix += "/../../demos/";
+	}
+
+#endif
+
 	sf::Font fnt;
-	fnt.loadFromFile("../../../demos/data/pixel.ttf");
+	fnt.loadFromFile(debugPathPrefix + "/data/pixel.ttf");
 
 	sf::Font graphFont;
-	graphFont.loadFromFile("../../../demos/data/courbd.ttf");
+	graphFont.loadFromFile(debugPathPrefix + "data/courbd.ttf");
 
 	sf::Texture flareTexture;
-	flareTexture.loadFromFile("../../../demos/data/flare.png");
+	flareTexture.loadFromFile(debugPathPrefix + "data/flare.png");
 	sf::Texture cursorTexture;
-	cursorTexture.loadFromFile("../../../demos/data/spr_cursor.png");
+	cursorTexture.loadFromFile(debugPathPrefix + "data/spr_cursor.png");
 	sf::Texture symbolTexture;
-	symbolTexture.loadFromFile("../../../demos/data/spr_console.png");
+	symbolTexture.loadFromFile(debugPathPrefix + "data/spr_console.png");
 
 	sf::Sprite flare;
 	flare.setTexture(flareTexture);
