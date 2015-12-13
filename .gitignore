@@ -27,7 +27,7 @@
 ipch/
 [Oo]bj/
 [Bb]uild/
-[Bb]in
+#[Bb]in
 [Dd]ebug*/
 [Rr]elease*/
 Ankh.NoLoad
