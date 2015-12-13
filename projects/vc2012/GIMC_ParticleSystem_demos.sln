@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GIMC_ParticleSystem_demos", "GIMC_ParticleSystem_demos\GIMC_ParticleSystem_demos.vcxproj", "{44FD1956-3480-4C23-A879-9E3962E3878F}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GIMC_ParticleSystem_Playground", "GIMC_ParticleSystem_demos\GIMC_ParticleSystem_Playground.vcxproj", "{FAD3175B-5966-428D-9BF6-9CE590EC8CEF}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GIMC_ParticleSystem_Galaxy", "GIMC_ParticleSystem_demos\GIMC_ParticleSystem_Galaxy.vcxproj", "{59E66BF1-DBD6-489D-9E4B-AEC6B5F17620}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,10 +13,14 @@ Global
 		Release|Win32 = Release|Win32
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{44FD1956-3480-4C23-A879-9E3962E3878F}.Debug|Win32.ActiveCfg = Debug|Win32
-		{44FD1956-3480-4C23-A879-9E3962E3878F}.Debug|Win32.Build.0 = Debug|Win32
-		{44FD1956-3480-4C23-A879-9E3962E3878F}.Release|Win32.ActiveCfg = Release|Win32
-		{44FD1956-3480-4C23-A879-9E3962E3878F}.Release|Win32.Build.0 = Release|Win32
+		{FAD3175B-5966-428D-9BF6-9CE590EC8CEF}.Debug|Win32.ActiveCfg = Debug|Win32
+		{FAD3175B-5966-428D-9BF6-9CE590EC8CEF}.Debug|Win32.Build.0 = Debug|Win32
+		{FAD3175B-5966-428D-9BF6-9CE590EC8CEF}.Release|Win32.ActiveCfg = Release|Win32
+		{FAD3175B-5966-428D-9BF6-9CE590EC8CEF}.Release|Win32.Build.0 = Release|Win32
+		{59E66BF1-DBD6-489D-9E4B-AEC6B5F17620}.Debug|Win32.ActiveCfg = Debug|Win32
+		{59E66BF1-DBD6-489D-9E4B-AEC6B5F17620}.Debug|Win32.Build.0 = Debug|Win32
+		{59E66BF1-DBD6-489D-9E4B-AEC6B5F17620}.Release|Win32.ActiveCfg = Release|Win32
+		{59E66BF1-DBD6-489D-9E4B-AEC6B5F17620}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -6,6 +6,6 @@ namespace GIMC
 {
 	namespace internal
 	{
-		VersionInfo ParticleSystemVersion = { 1, 0, 0 };
+		VersionInfo ParticleSystemVersion = { 0, 9, 0 };
 	};
 };

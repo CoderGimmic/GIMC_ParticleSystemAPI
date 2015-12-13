@@ -10,20 +10,27 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\demos\include\DebugGraph.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\demos\src\DebugGraph.cpp" />
+    <ClCompile Include="..\..\..\demos\src\Playground.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{52AD3045-759B-4F80-B131-49F24E7FE84D}</ProjectGuid>
+    <ProjectGuid>{FAD3175B-5966-428D-9BF6-9CE590EC8CEF}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>GIMC_ParticleSystem_LIB</RootNamespace>
+    <RootNamespace>GIMC_ParticleSystem_Playground</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
-    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -40,14 +47,15 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
-    <OutDir>..\..\..\lib\vc2012\static\</OutDir>
+    <LinkIncremental>true</LinkIncremental>
+    <OutDir>..\..\..\demos\bin\</OutDir>
     <IntDir>$(ProjectName)\$(Configuration)\</IntDir>
-    <TargetName>GIMC_ParticleSystem_debug</TargetName>
+    <TargetName>$(ProjectName)_debug</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
-    <OutDir>..\..\..\lib\vc2012\static\</OutDir>
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>..\..\..\demos\bin\</OutDir>
     <IntDir>$(ProjectName)\$(Configuration)\</IntDir>
-    <TargetName>GIMC_ParticleSystem</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -55,16 +63,15 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
-      <PreprocessorDefinitions>WIN32;_DEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\include\GIMC;</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\include\GIMC\;..\..\..\demos\include\;..\..\..\demos\external\sfml\include\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <SubSystem>Windows</SubSystem>
+      <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>..\..\..\lib\vc2012\static\;..\..\..\demos\external\sfml\lib\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>sfml-graphics-d.lib;sfml-window-d.lib;sfml-system-d.lib;sfml-main-d.lib;GIMC_ParticleSystem_debug.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
-    <Lib>
-      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -74,50 +81,19 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>..\..\..\include\GIMC;</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\..\include\GIMC\;..\..\..\demos\include\;..\..\..\demos\external\sfml\include\</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <AdditionalLibraryDirectories>..\..\..\lib\vc2012\static\;..\..\..\demos\external\sfml\lib\</AdditionalLibraryDirectories>
+      <AdditionalDependencies>sfml-graphics.lib;sfml-window.lib;sfml-system.lib;sfml-main.lib;GIMC_ParticleSystem.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
-    <Lib>
-      <OutputFile>$(OutDir)$(TargetName)$(TargetExt)</OutputFile>
-    </Lib>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\src\GIMC\Color.cpp" />
-    <ClCompile Include="..\..\..\src\GIMC\debugging\EmitterDebug.cpp" />
-    <ClCompile Include="..\..\..\src\GIMC\Emitter.cpp" />
-    <ClCompile Include="..\..\..\src\GIMC\internal\EmitterDefinition.cpp" />
-    <ClCompile Include="..\..\..\src\GIMC\internal\HSL.cpp" />
-    <ClCompile Include="..\..\..\src\GIMC\internal\Math.cpp" />
-    <ClCompile Include="..\..\..\src\GIMC\internal\ParticleDefinition.cpp" />
-    <ClCompile Include="..\..\..\src\GIMC\Output.cpp" />
-    <ClCompile Include="..\..\..\src\GIMC\Particle.cpp" />
-    <ClCompile Include="..\..\..\src\GIMC\ParticleSystem.cpp" />
-    <ClCompile Include="..\..\..\src\GIMC\Vector2.cpp" />
-    <ClCompile Include="..\..\..\src\GIMC\Version.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\include\GIMC\Color.h" />
-    <ClInclude Include="..\..\..\include\GIMC\debugging\EmitterDebug.h" />
-    <ClInclude Include="..\..\..\include\GIMC\Emitter.h" />
-    <ClInclude Include="..\..\..\include\GIMC\GIMC_ParticleSystem.h" />
-    <ClInclude Include="..\..\..\include\GIMC\internal\EmitterDefinition.h" />
-    <ClInclude Include="..\..\..\include\GIMC\internal\HSL.h" />
-    <ClInclude Include="..\..\..\include\GIMC\internal\Math.h" />
-    <ClInclude Include="..\..\..\include\GIMC\internal\ParticleDefinition.h" />
-    <ClInclude Include="..\..\..\include\GIMC\internal\SpawnedParticleContainer.h" />
-    <ClInclude Include="..\..\..\include\GIMC\Output.h" />
-    <ClInclude Include="..\..\..\include\GIMC\Particle.h" />
-    <ClInclude Include="..\..\..\include\GIMC\ParticleSystem.h" />
-    <ClInclude Include="..\..\..\include\GIMC\Settings.h" />
-    <ClInclude Include="..\..\..\include\GIMC\Vector2.h" />
-    <ClInclude Include="..\..\..\include\GIMC\Version.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

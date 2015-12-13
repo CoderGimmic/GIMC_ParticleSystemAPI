@@ -10,10 +10,13 @@
       <Platform>Win32</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\demos\src\GalaxyDemo.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{44FD1956-3480-4C23-A879-9E3962E3878F}</ProjectGuid>
+    <ProjectGuid>{59E66BF1-DBD6-489D-9E4B-AEC6B5F17620}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>GIMC_ParticleSystem_demos</RootNamespace>
+    <RootNamespace>GIMC_ParticleSystem_Galaxy</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -83,17 +86,10 @@
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <AdditionalLibraryDirectories>..\..\..\lib\vc2012\static\;..\..\..\demos\external\sfml\lib\</AdditionalLibraryDirectories>
-      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
       <AdditionalDependencies>sfml-graphics.lib;sfml-window.lib;sfml-system.lib;sfml-main.lib;GIMC_ParticleSystem.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClInclude Include="..\..\..\demos\include\DebugGraph.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="..\..\..\demos\src\DebugGraph.cpp" />
-    <ClCompile Include="..\..\..\demos\src\GalaxyDemo.cpp" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
